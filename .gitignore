@@ -1,4 +1,7 @@
 node_modules/
-ParkingRealm/.vs
-ParkingRealm/obj
-ParkingRealm/ParkingRealm.csproj.user
+
+# .NET build output and IDE files
+bin/
+obj/
+.vs/
+*.user

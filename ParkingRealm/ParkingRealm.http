@@ -1,0 +1,67 @@
+@host = http://localhost:5198
+
+### Valid registration -> 201
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "anna@example.com",
+  "password": "Passw0rd!",
+  "firstName": "Anna",
+  "lastName": "Hansen",
+  "phoneNumber": "+4512345678"
+}
+
+### Missing fields -> 400 with one error per field
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{}
+
+### Malformed email -> 400
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "Passw0rd!",
+  "firstName": "Anna",
+  "lastName": "Hansen",
+  "phoneNumber": "+4512345678"
+}
+
+### Phone without country code -> 400
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "bo@example.com",
+  "password": "Passw0rd!",
+  "firstName": "Bo",
+  "lastName": "Jensen",
+  "phoneNumber": "12345678"
+}
+
+### Weak password -> 400
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "bo@example.com",
+  "password": "abc",
+  "firstName": "Bo",
+  "lastName": "Jensen",
+  "phoneNumber": "+4512345678"
+}
+
+### Duplicate email (different letter case) -> 400, run after the first request
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "ANNA@example.com",
+  "password": "Passw0rd!",
+  "firstName": "Anna",
+  "lastName": "Hansen",
+  "phoneNumber": "+4512345678"
+}
