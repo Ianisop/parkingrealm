@@ -65,3 +65,40 @@ Content-Type: application/json
   "lastName": "Hansen",
   "phoneNumber": "+4512345678"
 }
+
+### Login (use the email from the registration above) -> 200 and a session cookie
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "anna@example.com",
+  "password": "Passw0rd!"
+}
+
+### Current user (the REST client sends the cookie from the login above) -> 200
+GET {{host}}/api/auth/me
+
+### Wrong password -> 401
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "anna@example.com",
+  "password": "Wrong123!"
+}
+
+### Unknown email -> 401, identical to the wrong password response
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "nobody@example.com",
+  "password": "Passw0rd!"
+}
+
+### Login with missing fields -> 400
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{}

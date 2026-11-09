@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,43 @@ public static class AuthEndpoints
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/api/auth/register", RegisterAsync);
+        app.MapPost("/api/auth/login", LoginAsync);
+        app.MapGet("/api/auth/me", GetCurrentUserAsync).RequireAuthorization();
     }
+
+    private static async Task<IResult> LoginAsync(
+        LoginRequest request,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager)
+    {
+        var errors = request.Validate();
+        if (errors.Count > 0)
+            return Results.ValidationProblem(errors);
+
+        var user = await userManager.FindByEmailAsync(request.Email!.Trim());
+        if (user is null)
+            return InvalidCredentials();
+
+        var check = await signInManager.CheckPasswordSignInAsync(user, request.Password!, lockoutOnFailure: false);
+        if (!check.Succeeded)
+            return InvalidCredentials();
+
+        await signInManager.SignInAsync(user, isPersistent: false);
+        return Results.Ok(ToUserResponse(user));
+    }
+
+    private static async Task<IResult> GetCurrentUserAsync(ClaimsPrincipal principal, UserManager<ApplicationUser> userManager)
+    {
+        var user = await userManager.GetUserAsync(principal);
+        return user is null ? Results.Unauthorized() : Results.Ok(ToUserResponse(user));
+    }
+
+    // Same response for an unknown email and a wrong password, so registered emails are not revealed.
+    private static IResult InvalidCredentials() =>
+        Results.Problem(title: "Invalid email or password.", statusCode: StatusCodes.Status401Unauthorized);
+
+    private static object ToUserResponse(ApplicationUser user) =>
+        new { user.Id, user.Email, user.FirstName, user.LastName };
 
     private static async Task<IResult> RegisterAsync(RegisterRequest request, UserManager<ApplicationUser> userManager)
     {

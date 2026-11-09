@@ -45,6 +45,20 @@ Appen kører på `http://localhost:3000` (den eneste origin API'et tillader i De
 REACT_APP_API_URL=http://localhost:5198
 ```
 
+## Login
+
+Login bruger en cookie (Identity cookie authentication). API'et sætter en HttpOnly-cookie ved login, og React sender den med hvert kald via `credentials: 'include'`.
+
+| Kald | Beskrivelse |
+| --- | --- |
+| `POST /api/auth/register` | Opret bruger |
+| `POST /api/auth/login` | Log ind med `{ email, password }`. `200` og cookie, `401` ved forkerte oplysninger, `400` ved manglende felter |
+| `GET /api/auth/me` | Den loggede ind bruger. `401` hvis ikke logget ind |
+
+Cookie-login forudsætter, at React-appen og API'et ligger på samme *site*. Lokalt er `localhost:3000` og `localhost:5198` samme site, og API'et tillader kun `http://localhost:3000` med credentials i Development. Ved deployment på forskellige sites skal cookien have `SameSite=None; Secure` og CORS med credentials, eller de to skal ligge bag samme domæne/reverse proxy.
+
+Der er endnu ikke logout, lockout eller roller.
+
 ## Tests
 
 ```powershell

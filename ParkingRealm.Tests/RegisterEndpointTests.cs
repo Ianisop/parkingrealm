@@ -7,7 +7,8 @@ using ParkingRealm.Data;
 
 namespace ParkingRealm.Tests;
 
-public class RegisterEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory>
+[Collection(ApiCollection.Name)]
+public class RegisterEndpointTests(ApiFactory factory)
 {
     private const string Password = "Passw0rd!";
 
