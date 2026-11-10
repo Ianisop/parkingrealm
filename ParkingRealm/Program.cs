@@ -69,6 +69,15 @@ if (builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    // Initialize the configured development database before Identity queries it.
+    // Production migrations remain a deployment responsibility.
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 if (args is ["--grant-admin", var email])
 {
     using var scope = app.Services.CreateScope();

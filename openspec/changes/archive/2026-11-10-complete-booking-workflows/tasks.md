@@ -9,7 +9,7 @@
 
 - [x] 2.1 Implement interval parsing/UTC validation shared by availability and booking requests; verify tests cover missing, past, zero-length, invalid-offset, and valid adjacent intervals.
 - [x] 2.2 Implement public read-only parking availability endpoint returning coordinates and reservation-derived state for a range or current instant; verify integration tests cover empty inventory, overlap, cancellation, and invalid input.
-- [ ] 2.3 Implement React booking client and parking map/criteria form for registered vehicles, automatic assignment and manual selection; verify UI tests cover displayed positions, validation, no spaces, refresh, and fetch failure.
+- [x] 2.3 Implement React booking client and parking map/criteria form for registered vehicles, automatic assignment and manual selection; verify UI tests cover displayed positions, validation, no spaces, refresh, and fetch failure. (Accepted by user with the booking-map test run waived.)
 
 ## 3. Reservations and Security
 
@@ -28,11 +28,11 @@
 ## 5. End-to-End Validation
 
 - [x] 5.1 Document booking endpoints, reservation-based availability limits, inventory provisioning, admin provisioning and rollout/rollback in README; verify documented commands and request examples are usable.
-- [ ] 5.2 Run `dotnet build`, `dotnet test ParkingRealm.Tests`, `npm test -- --watch=false` and `npm run build` in `parking-realm`; verify all pass or report any environment-limited checks explicitly.
+- [x] 5.2 Run `dotnet build`, `dotnet test ParkingRealm.Tests`, `npm test -- --watch=false` and `npm run build` in `parking-realm`; verify all pass or report any environment-limited checks explicitly. (Accepted by user with the frontend test exclusion documented below.)
 
 Validation results:
 - Workspace build passed; all 67 backend tests passed.
 - Frontend tests passed: 40 tests across 7 suites using `npm test -- --watchAll=false --runInBand --testPathIgnorePatterns=BookingPage.test.js`.
-- `BookingPage.test.js` remains excluded at the user's request for task 2.3; tasks 2.3 and 5.2 remain unchecked pending that verification.
+- `BookingPage.test.js` was excluded at the user's request. The user explicitly accepted tasks 2.3 and 5.2 as complete without this verification; the excluded tests have not been verified as passing.
 - `npm run build` passed with a tooling deprecation warning for `fs.F_OK` (DEP0176).
 - `openspec validate complete-booking-workflows --strict` passed.
