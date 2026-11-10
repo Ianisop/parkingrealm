@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ParkingRealm.Booking;
 using ParkingRealm.Data;
 using ParkingRealm.Endpoints;
 
@@ -7,12 +8,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<ReservationService>();
 
 builder.Services
     .AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+    options.AddPolicy("Administrator", policy => policy.RequireRole(AdministratorProvisioning.RoleName)));
 
 builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
@@ -20,6 +23,7 @@ builder.Services
         options.User.RequireUniqueEmail = true;
         options.Password.RequiredLength = 8;
     })
+    .AddRoles<IdentityRole>()
     .AddSignInManager()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -47,6 +51,14 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddProblemDetails();
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
+});
 
 if (builder.Environment.IsDevelopment())
 {
@@ -56,6 +68,20 @@ if (builder.Environment.IsDevelopment())
 }
 
 var app = builder.Build();
+
+if (args is ["--grant-admin", var email])
+{
+    using var scope = app.Services.CreateScope();
+    var result = await AdministratorProvisioning.GrantAsync(scope.ServiceProvider, email);
+    if (!result.Succeeded)
+    {
+        foreach (var error in result.Errors)
+            Console.Error.WriteLine($"{error.Code}: {error.Description}");
+        Environment.ExitCode = 1;
+    }
+    else Console.WriteLine("Administrator role provisioned. Sign in again to refresh the session.");
+    return;
+}
 
 app.UseExceptionHandler();
 
@@ -69,6 +95,11 @@ app.UseAuthorization();
 
 app.MapGet("/", () => "Hello World!");
 app.MapAuthEndpoints();
+app.MapVehicleEndpoints();
+app.MapParkingEndpoints();
+app.MapReservationEndpoints();
+app.MapBookingSecurityEndpoints();
+app.MapBookingStatisticsEndpoints();
 
 app.Run();
 

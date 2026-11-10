@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { getCurrentUser } from './api/auth';
 import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
+import BookingPage from './BookingPage';
+import BookingStatisticsPage from './BookingStatisticsPage';
 import './RegisterPage.css';
 
 function App() {
@@ -37,6 +39,11 @@ function App() {
         <h1>
           Velkommen, {user.firstName} {user.lastName}
         </h1>
+        {user.isAdministrator && <nav aria-label="Administrator">
+          <button type="button" onClick={() => setView('booking')}>Book parkering</button>
+          <button type="button" onClick={() => setView('statistics')}>Bookingstatistik</button>
+        </nav>}
+        {user.isAdministrator && view === 'statistics' ? <BookingStatisticsPage /> : <BookingPage />}
       </main>
     );
   }

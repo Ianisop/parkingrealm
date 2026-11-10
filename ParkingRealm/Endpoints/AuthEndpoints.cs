@@ -33,21 +33,21 @@ public static class AuthEndpoints
             return InvalidCredentials();
 
         await signInManager.SignInAsync(user, isPersistent: false);
-        return Results.Ok(ToUserResponse(user));
+        return Results.Ok(ToUserResponse(user, await userManager.IsInRoleAsync(user, AdministratorProvisioning.RoleName)));
     }
 
     private static async Task<IResult> GetCurrentUserAsync(ClaimsPrincipal principal, UserManager<ApplicationUser> userManager)
     {
         var user = await userManager.GetUserAsync(principal);
-        return user is null ? Results.Unauthorized() : Results.Ok(ToUserResponse(user));
+        return user is null ? Results.Unauthorized() : Results.Ok(ToUserResponse(user, principal.IsInRole(AdministratorProvisioning.RoleName)));
     }
 
     // Same response for an unknown email and a wrong password, so registered emails are not revealed.
     private static IResult InvalidCredentials() =>
         Results.Problem(title: "Invalid email or password.", statusCode: StatusCodes.Status401Unauthorized);
 
-    private static object ToUserResponse(ApplicationUser user) =>
-        new { user.Id, user.Email, user.FirstName, user.LastName };
+    private static object ToUserResponse(ApplicationUser user, bool isAdministrator) =>
+        new { user.Id, user.Email, user.FirstName, user.LastName, IsAdministrator = isAdministrator };
 
     private static async Task<IResult> RegisterAsync(RegisterRequest request, UserManager<ApplicationUser> userManager)
     {

@@ -1,7 +1,9 @@
 node_modules/
-
-# .NET build output and IDE files
-bin/
-obj/
-.vs/
-*.user
+ParkingRealm/.vs
+ParkingRealm/obj
+ParkingRealm/ParkingRealm.csproj.user
+.vs
+ParkingRealm/bin
+.tools
+ParkingRealm.Tests/obj
+ParkingRealm.Tests/bin

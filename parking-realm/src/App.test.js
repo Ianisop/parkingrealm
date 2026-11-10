@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import { getCurrentUser, login } from './api/auth';
 
+jest.mock('./BookingPage', () => () => <div>Booking</div>);
+
 jest.mock('./api/auth', () => ({
   ...jest.requireActual('./api/auth'),
   getCurrentUser: jest.fn(),
@@ -31,6 +33,14 @@ test('restores an existing session and greets the user', async () => {
 
   expect(await screen.findByRole('heading', { name: 'Velkommen, Anna Hansen' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Log ind' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Bookingstatistik' })).not.toBeInTheDocument();
+});
+
+test('only administrator sessions can navigate to booking statistics', async () => {
+  getCurrentUser.mockResolvedValue({ ...user, isAdministrator: true });
+  render(<App />);
+  userEvent.click(await screen.findByRole('button', { name: 'Bookingstatistik' }));
+  expect(screen.getByRole('heading', { name: 'Bookingstatistik' })).toBeInTheDocument();
 });
 
 test('switches between login and registration', async () => {

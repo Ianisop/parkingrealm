@@ -1,0 +1,22 @@
+.booking {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 56rem;
+  margin: 1rem auto;
+}
+
+.booking form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.parking-map {
+  display: grid;
+  gap: 0.5rem;
+  overflow: auto;
+}
+
+.parking-map button[aria-pressed='true'] {
+  outline: 3px solid #185abc;
+}
