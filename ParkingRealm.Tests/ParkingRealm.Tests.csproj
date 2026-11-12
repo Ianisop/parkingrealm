@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ParkingRealm\ParkingRealm.csproj" />
+    <ProjectReference Include="..\ParkingRealm.RegistryMock\ParkingRealm.RegistryMock.csproj" />
     <None Include="..\ParkingRealm\Data\Provisioning\ParkingSpaces.sql" Link="ParkingSpaces.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

@@ -4,6 +4,7 @@ import App from './App';
 import { getCurrentUser, login } from './api/auth';
 
 jest.mock('./BookingPage', () => () => <div>Booking</div>);
+jest.mock('./VehiclesPage', () => () => <div>Vehicles</div>);
 
 jest.mock('./api/auth', () => ({
   ...jest.requireActual('./api/auth'),
@@ -40,6 +41,25 @@ test('only administrator sessions can navigate to booking statistics', async () 
   getCurrentUser.mockResolvedValue({ ...user, isAdministrator: true });
   render(<App />);
   userEvent.click(await screen.findByRole('button', { name: 'Bookingstatistik' }));
+  expect(screen.getByRole('heading', { name: 'Bookingstatistik' })).toBeInTheDocument();
+});
+
+test('customers navigate between booking and their vehicles', async () => {
+  getCurrentUser.mockResolvedValue(user);
+  render(<App />);
+  expect(await screen.findByText('Booking')).toBeInTheDocument();
+  userEvent.click(screen.getByRole('button', { name: 'Mine køretøjer' }));
+  expect(screen.getByText('Vehicles')).toBeInTheDocument();
+  userEvent.click(screen.getByRole('button', { name: 'Book parkering' }));
+  expect(screen.getByText('Booking')).toBeInTheDocument();
+});
+
+test('administrators can reach vehicles as well as statistics', async () => {
+  getCurrentUser.mockResolvedValue({ ...user, isAdministrator: true });
+  render(<App />);
+  userEvent.click(await screen.findByRole('button', { name: 'Mine køretøjer' }));
+  expect(screen.getByText('Vehicles')).toBeInTheDocument();
+  userEvent.click(screen.getByRole('button', { name: 'Bookingstatistik' }));
   expect(screen.getByRole('heading', { name: 'Bookingstatistik' })).toBeInTheDocument();
 });
 

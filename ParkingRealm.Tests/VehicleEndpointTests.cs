@@ -54,4 +54,50 @@ public class VehicleEndpointTests(ApiFactory factory)
         Assert.Empty((await other.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
         Assert.Single((await owner.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
     }
+
+    [Fact]
+    public async Task Unknown_plate_is_rejected_without_persisting()
+    {
+        using var client = await BookingCustomer.LoginAsync(factory);
+        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = FakeVehicleRegistry.UnknownPlate });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("registrationNumber", await response.Content.ReadAsStringAsync());
+        Assert.Empty((await client.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
+    }
+
+    [Fact]
+    public async Task Unavailable_registry_is_reported_without_persisting()
+    {
+        using var client = await BookingCustomer.LoginAsync(factory);
+        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = FakeVehicleRegistry.UnavailablePlate });
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Empty((await client.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
+    }
+
+    [Fact]
+    public async Task Concurrent_duplicate_registrations_create_one_vehicle()
+    {
+        using var client = await BookingCustomer.LoginAsync(factory);
+        var responses = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ =>
+            client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "EF12345" })));
+        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Created);
+        Assert.All(responses.Where(r => r.StatusCode != HttpStatusCode.Created),
+            r => Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode));
+        Assert.Single((await client.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
+    }
+
+    [Fact]
+    public async Task Database_failure_is_an_error_and_persists_nothing()
+    {
+        using var client = await BookingCustomer.LoginAsync(factory);
+        var cookie = (await client.GetAsync("/api/auth/me")).RequestMessage!.Headers.GetValues("Cookie");
+        await using var unavailable = new ApiFactory(ApiFactory.UnreachableConnectionString);
+        using var failing = unavailable.CreateClient();
+        failing.DefaultRequestHeaders.Add("Cookie", cookie);
+        failing.DefaultRequestHeaders.Add("X-CSRF-TOKEN", client.DefaultRequestHeaders.GetValues("X-CSRF-TOKEN"));
+        var response = await failing.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345" });
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.DoesNotContain("SqlException", await response.Content.ReadAsStringAsync());
+        Assert.Empty((await client.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
+    }
 }

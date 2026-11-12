@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using ParkingRealm.Data;
 
 namespace ParkingRealm.Booking;
@@ -80,7 +81,18 @@ public class ReservationService(ApplicationDbContext db)
                 CreatedAt = DateTimeOffset.UtcNow
             };
             db.Reservations.Add(reservation);
-            await db.SaveChangesAsync(ct);
+            try
+            {
+                await db.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 547 })
+            {
+                // The vehicle was deleted after the ownership check; anything else is a real failure.
+                db.ChangeTracker.Clear();
+                if (!await db.Vehicles.AnyAsync(v => v.Id == vehicleId && v.OwnerId == ownerId, ct))
+                    return new(ReservationOutcome.VehicleNotFound);
+                throw;
+            }
             await transaction.CommitAsync(ct);
             return new(ReservationOutcome.Created, reservation);
         }

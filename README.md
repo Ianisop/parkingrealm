@@ -6,7 +6,7 @@ ParkingRealm består af en ASP.NET Core minimal API (`ParkingRealm/`) med SQL Se
 
 - .NET 10 SDK
 - Node.js og npm
-- SQL Server LocalDB (følger med Visual Studio) eller en anden SQL Server. Standardforbindelsen i `ParkingRealm/appsettings.Development.json` bruger `(localdb)\MSSQLLocalDB`.
+- SQL Server LocalDB (følger med Visual Studio) eller en anden SQL Server. Standardforbindelsen i `ParkingRealm/appsettings.Development.json` bruger `(localdb)\MSSQLLocalDB` og databasen `ParkingRealm`.
 - EF Core-værktøjet installeres første gang lokalt fra repoets rod: `dotnet tool install dotnet-ef --tool-path .tools --version 10.0.14`
 
 ## Database
@@ -21,6 +21,8 @@ Ny migration efter en modelændring, fra repoets rod: `.\.tools\dotnet-ef.exe mi
 
 Brug user-secrets eller miljøvariablen `ConnectionStrings__DefaultConnection` til en anden forbindelsesstreng. Læg aldrig adgangskoder i `appsettings*.json`.
 
+Kun Development har en indbygget forbindelsesstreng (LocalDB). `appsettings.json` indeholder ingen, så andre miljøer skal angive `ConnectionStrings__DefaultConnection` eksplicit, ellers kan API'et ikke tilgå databasen. Skift af forbindelse flytter ikke data: LocalDB-databasen `ParkingRealm` er ny og tom, indtil migrations er kørt (og pladser indlæst, se Provisionering), og en tidligere database (fx SQL Express) berøres ikke.
+
 ## Kør API'et
 
 ```powershell
@@ -29,6 +31,24 @@ dotnet run --launch-profile http
 ```
 
 API'et lytter på `http://localhost:5198`. Eksempler på kald ligger i `ParkingRealm/ParkingRealm.http`.
+
+## Registreringsnummer-API (mock)
+
+Køretøjer kan kun registreres, hvis registreringsnummeret findes i et eksternt registreringsnummer-API. API'et kalder opslaget server-side; browseren kalder det aldrig. Lokalt erstattes det af et separat mock-projekt, `ParkingRealm.RegistryMock`, som skal køre, før køretøjer kan registreres:
+
+```powershell
+dotnet run --project ParkingRealm.RegistryMock
+```
+
+Mocken lytter på `http://localhost:5199` (kan ændres med `--urls`) og kender præcis tre biler: `AB12345`, `CD12345` og `EF12345` (opslag er ikke versalfølsomt). `GET /vehicles/{registreringsnummer}` svarer `200` med `{ "registrationNumber", "make", "model" }` eller `404` for ukendte numre.
+
+Opsætning i `ParkingRealm/appsettings.Development.json`:
+
+```json
+"VehicleRegistry": { "BaseUrl": "http://localhost:5199", "TimeoutSeconds": 5 }
+```
+
+Mocken er kun til udvikling og er ikke et rigtigt register. `appsettings.json` har ingen `VehicleRegistry:BaseUrl`, så andre miljøer skal angive en tjeneste med samme opslagskontrakt (`VehicleRegistry__BaseUrl`); uden den kan ingen køretøjer registreres. Allerede registrerede køretøjer er upåvirkede. Registrering svarer `400` for et ukendt, ufuldstændigt eller afvigende opslag og `503`, hvis registret ikke kan nås, svarer med fejl eller overskrider tidsgrænsen; i begge tilfælde gemmes intet. Backend-testene bruger en fake og kræver ikke, at mocken kører.
 
 ## Kør React-appen
 
@@ -65,14 +85,17 @@ Login og `/api/auth/me` returnerer også `isAdministrator`. Almindelige brugere 
 | `GET /api/parking-spaces` | Offentlig, aktuel reservationsbaseret status med stabile ID'er og todimensionale `row`/`column`-koordinater |
 | `GET /api/parking-spaces?start=...&end=...` | Status for det angivne tidsinterval |
 | `GET /api/vehicles` | Den indloggede brugers køretøjer |
-| `POST /api/vehicles` | Registrer eget køretøj med `{ "registrationNumber": "AB12345" }` |
+| `POST /api/vehicles` | Registrer eget køretøj med `{ "registrationNumber": "AB12345" }` efter opslag i registreringsnummer-API'et. `201`, `400` ved ugyldigt, dublet eller ukendt nummer, `503` hvis registret er utilgængeligt |
+| `DELETE /api/vehicles/{id}` | Slet eget køretøj. `204`, `404` hvis køretøjet ikke findes eller tilhører en anden bruger, `409` hvis det har en reservation (aktiv, annulleret, tidligere eller fremtidig) |
 | `GET /api/reservations` | Brugerens egne aktive og annullerede reservationer |
 | `POST /api/reservations` | Opret booking med køretøj, tidsinterval og automatisk tildeling eller selvvalg |
 | `POST /api/reservations/{id}/cancel` | Annuller egen aktive reservation; historikken bevares |
 | `GET /api/antiforgery` | Hent `requestToken` som indlogget bruger; svaret sætter også en antiforgery-cookie |
 | `GET /api/admin/booking-statistics?start=...&end=...` | Kun administrator: antal, aktive/annullerede og daglige tællinger |
 
-Alle `POST`-kald under vehicles/reservations kræver login-cookien, antiforgery-cookien og headeren `X-CSRF-TOKEN` med den hentede `requestToken`. React-klienten håndterer dette automatisk. Ved direkte API-kald skal cookies bevares mellem login, tokenhentning og skrivning.
+Alle `POST`- og `DELETE`-kald under vehicles/reservations kræver login-cookien, antiforgery-cookien og headeren `X-CSRF-TOKEN` med den hentede `requestToken` (mangler eller er den ugyldig, svarer API'et `400`). React-klienten håndterer dette automatisk. Ved direkte API-kald skal cookies bevares mellem login, tokenhentning og skrivning.
+
+Et køretøj slettes aldrig, så længe nogen reservation refererer til det; reservationshistorikken bevares altid, og der er ingen kaskadesletning. Også samtidige booking- og sletningskald afgøres entydigt: enten slettes køretøjet, og bookingen afvises, eller bookingen gemmes, og sletningen svarer `409`.
 
 Eksempel på bookingens JSON-body (erstat ID'erne med værdier returneret af API'et og vælg et fremtidigt interval):
 
