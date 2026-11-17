@@ -1,24 +1,71 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from 'react';
+import { getCurrentUser } from './api/auth';
+import LoginPage from './LoginPage';
+import RegisterPage from './RegisterPage';
+import BookingPage from './BookingPage';
+import VehiclesPage from './VehiclesPage';
+import BookingStatisticsPage from './BookingStatisticsPage';
+import './RegisterPage.css';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(true);
+  const [view, setView] = useState('login');
+
+  // Restore the login state from the session cookie, e.g. after a page reload.
+  useEffect(() => {
+    let active = true;
+    getCurrentUser().then((currentUser) => {
+      if (active) {
+        setUser(currentUser);
+        setChecking(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (checking) {
+    return (
+      <main className="register">
+        <p>Henter…</p>
+      </main>
+    );
+  }
+
+  if (user) {
+    return (
+      <main className="register">
+        <h1>
+          Velkommen, {user.firstName} {user.lastName}
+        </h1>
+        <nav aria-label="Navigation">
+          <button type="button" onClick={() => setView('booking')}>Book parkering</button>
+          <button type="button" onClick={() => setView('vehicles')}>Mine køretøjer</button>
+          {user.isAdministrator && <button type="button" onClick={() => setView('statistics')}>Bookingstatistik</button>}
+        </nav>
+        {user.isAdministrator && view === 'statistics' ? <BookingStatisticsPage />
+          : view === 'vehicles' ? <VehiclesPage /> : <BookingPage />}
+      </main>
+    );
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      {view === 'login' ? <LoginPage onLoggedIn={setUser} /> : <RegisterPage />}
+      <nav className="register">
+        {view === 'login' ? (
+          <button type="button" onClick={() => setView('register')}>
+            Ny bruger? Opret bruger
+          </button>
+        ) : (
+          <button type="button" onClick={() => setView('login')}>
+            Har du en bruger? Log ind
+          </button>
+        )}
+      </nav>
+    </>
   );
 }
 

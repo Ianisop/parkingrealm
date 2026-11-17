@@ -2,3 +2,11 @@ node_modules/
 ParkingRealm/.vs
 ParkingRealm/obj
 ParkingRealm/ParkingRealm.csproj.user
+.vs
+ParkingRealm/bin
+.tools
+ParkingRealm.Tests/obj
+ParkingRealm.Tests/bin
+
+ParkingRealm.RegistryMock/obj
+ParkingRealm.RegistryMock/bin
