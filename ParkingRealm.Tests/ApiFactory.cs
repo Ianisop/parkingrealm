@@ -2,9 +2,26 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ParkingRealm.Data;
+using ParkingRealm.Registry;
 
 namespace ParkingRealm.Tests;
+
+// Plates other than the markers are found, so tests never need the running mock service.
+public sealed class FakeVehicleRegistry : IVehicleRegistry
+{
+    public const string UnknownPlate = "UNKNOWN1";
+    public const string UnavailablePlate = "DOWN0001";
+
+    public Task<RegistryOutcome> LookupAsync(string registrationNumber, CancellationToken ct) =>
+        Task.FromResult(registrationNumber switch
+        {
+            UnknownPlate => RegistryOutcome.NotFound,
+            UnavailablePlate => RegistryOutcome.Unavailable,
+            _ => RegistryOutcome.Found
+        });
+}
 
 public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
@@ -21,8 +38,18 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     }
 
     internal ApiFactory(string connectionString) => this.connectionString = connectionString;
-    protected override void ConfigureWebHost(IWebHostBuilder builder) =>
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
         builder.UseSetting("ConnectionStrings:DefaultConnection", connectionString);
+        // Development auto-migrates at startup, which would throw before any request for an unreachable database.
+        if (connectionString != TestConnectionString)
+            builder.UseEnvironment("Testing");
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IVehicleRegistry>();
+            services.AddSingleton<IVehicleRegistry, FakeVehicleRegistry>();
+        });
+    }
 
     public async Task InitializeAsync()
     {

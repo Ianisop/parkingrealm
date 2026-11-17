@@ -3,12 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using ParkingRealm.Booking;
 using ParkingRealm.Data;
 using ParkingRealm.Endpoints;
+using ParkingRealm.Registry;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<ReservationService>();
+builder.Services.AddHttpClient<IVehicleRegistry, HttpVehicleRegistry>(client =>
+{
+    var baseUrl = builder.Configuration["VehicleRegistry:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+        client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue("VehicleRegistry:TimeoutSeconds", 5));
+});
 
 builder.Services
     .AddAuthentication(IdentityConstants.ApplicationScheme)

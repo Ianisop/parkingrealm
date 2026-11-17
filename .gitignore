@@ -7,3 +7,6 @@ ParkingRealm/bin
 .tools
 ParkingRealm.Tests/obj
 ParkingRealm.Tests/bin
+
+ParkingRealm.RegistryMock/obj
+ParkingRealm.RegistryMock/bin
