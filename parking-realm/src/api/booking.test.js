@@ -10,19 +10,19 @@ test('loads interval availability with credentials', async () => {
   expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/parking-spaces?'), expect.objectContaining({ credentials: 'include' }));
 });
 
-test('registers a vehicle with an antiforgery token', async () => {
+test.each([true, false])('registers a vehicle with electric=%s and an antiforgery token', async (isElectric) => {
   fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ requestToken: 'token' }) });
   fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: 1 }) });
-  await registerVehicle('AB12345');
+  await registerVehicle('AB12345', isElectric);
   expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/vehicles'), expect.objectContaining({
-    method: 'POST', body: JSON.stringify({ registrationNumber: 'AB12345' }),
+    method: 'POST', body: JSON.stringify({ registrationNumber: 'AB12345', isElectric }),
     headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'token' }),
   }));
 });
 
 test('antiforgery failure prevents a write', async () => {
   fetch.mockResolvedValueOnce({ ok: false });
-  expect((await registerVehicle('AB12345')).ok).toBe(false);
+  expect((await registerVehicle('AB12345', false)).ok).toBe(false);
   expect(fetch).toHaveBeenCalledTimes(1);
 });
 

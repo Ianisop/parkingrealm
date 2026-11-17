@@ -84,6 +84,27 @@ if (app.Environment.IsDevelopment())
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await db.Database.MigrateAsync();
+
+    // Populate an empty development parking lot without duplicating existing spots.
+    if (!await db.ParkingSpaces.AnyAsync())
+    {
+        for (var row = 1; row <= 4; row++)
+        {
+            for (var column = 1; column <= 5; column++)
+            {
+                var position = (row - 1) * 5 + column;
+                db.ParkingSpaces.Add(new ParkingSpace
+                {
+                    Row = row,
+                    Column = column,
+                    IsAccessible = position <= 2,
+                    HasCharger = position > 16
+                });
+            }
+        }
+
+        await db.SaveChangesAsync();
+    }
 }
 
 if (args is ["--grant-admin", var email])

@@ -30,7 +30,7 @@ public static class ParkingEndpoints
         return Results.Ok(await db.ParkingSpaces.AsNoTracking().OrderBy(s => s.Row).ThenBy(s => s.Column)
             .Select(s => new
             {
-                s.Id, s.Row, s.Column,
+                s.Id, s.Row, s.Column, s.IsAccessible, s.HasCharger,
                 IsAvailable = !reservations.Any(r => r.ParkingSpaceId == s.Id)
             }).ToListAsync(ct));
     }

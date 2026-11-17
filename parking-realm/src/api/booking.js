@@ -55,9 +55,9 @@ export const createReservation = (criteria) => bookingRequest('/api/reservations
   body: JSON.stringify(criteria),
 });
 export const cancelReservation = (id) => bookingRequest(`/api/reservations/${id}/cancel`, { method: 'POST' });
-export const registerVehicle = (registrationNumber) => bookingRequest('/api/vehicles', {
+export const registerVehicle = (registrationNumber, isElectric) => bookingRequest('/api/vehicles', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ registrationNumber }),
+  body: JSON.stringify({ registrationNumber, isElectric }),
 });
 export const deleteVehicle = (id) => bookingRequest(`/api/vehicles/${id}`, { method: 'DELETE' });

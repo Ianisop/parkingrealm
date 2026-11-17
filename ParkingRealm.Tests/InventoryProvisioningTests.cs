@@ -43,6 +43,34 @@ public class InventoryProvisioningTests(ApiFactory factory)
         Assert.Equal(originalIds, repeatedIds);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(4)]
+    [InlineData(6)]
+    [InlineData(10)]
+    public async Task Provisioning_designates_first_two_accessible_and_last_four_charging_spaces(int count)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        var inventory = System.Text.Json.JsonSerializer.Serialize(Enumerable.Range(0, count).Reverse()
+            .Select(column => new { row = 0, column }));
+        await ProvisionAsync(db, inventory);
+        var spaces = await db.ParkingSpaces.AsNoTracking().OrderBy(s => s.Id).ToListAsync();
+        Assert.Equal(count, spaces.Count);
+        for (var index = 0; index < count; index++)
+        {
+            Assert.Equal(index, spaces[index].Column);
+            Assert.Equal(index < 2, spaces[index].IsAccessible);
+            Assert.Equal(index >= count - 4, spaces[index].HasCharger);
+        }
+        await ProvisionAsync(db, inventory);
+        var repeated = await db.ParkingSpaces.AsNoTracking().OrderBy(s => s.Id).ToListAsync();
+        Assert.Equal(spaces.Select(s => (s.Id, s.IsAccessible, s.HasCharger)),
+            repeated.Select(s => (s.Id, s.IsAccessible, s.HasCharger)));
+    }
+
     [Fact]
     public async Task Duplicate_coordinates_are_rejected_without_writing()
     {

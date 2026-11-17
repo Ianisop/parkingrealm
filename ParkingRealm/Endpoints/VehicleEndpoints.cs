@@ -14,7 +14,7 @@ public static class VehicleEndpoints
         vehicles.MapGet("", async (ClaimsPrincipal principal, ApplicationDbContext db, CancellationToken ct) =>
             Results.Ok(await db.Vehicles.AsNoTracking()
                 .Where(v => v.OwnerId == principal.FindFirstValue(ClaimTypes.NameIdentifier))
-                .OrderBy(v => v.Id).Select(v => new { v.Id, v.RegistrationNumber }).ToListAsync(ct)));
+                .OrderBy(v => v.Id).Select(v => new { v.Id, v.RegistrationNumber, v.IsElectric }).ToListAsync(ct)));
         vehicles.MapPost("", RegisterAsync).AddEndpointFilter<BookingAntiforgeryFilter>();
         vehicles.MapDelete("/{id:int}", DeleteAsync).AddEndpointFilter<BookingAntiforgeryFilter>();
     }
@@ -55,6 +55,11 @@ public static class VehicleEndpoints
         var number = request.RegistrationNumber?.Trim();
         if (string.IsNullOrWhiteSpace(number) || number.Length > 32)
             return InvalidNumber("Registration number must contain 1 to 32 characters.");
+        if (request.IsElectric is null)
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["isElectric"] = ["Specify whether the vehicle is electric."]
+            });
 
         var ownerId = principal.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var normalized = number.ToUpperInvariant();
@@ -74,7 +79,8 @@ public static class VehicleEndpoints
         {
             OwnerId = ownerId,
             RegistrationNumber = number,
-            NormalizedRegistrationNumber = normalized
+            NormalizedRegistrationNumber = normalized,
+            IsElectric = request.IsElectric.Value
         };
         db.Vehicles.Add(vehicle);
         try
@@ -85,11 +91,11 @@ public static class VehicleEndpoints
         {
             return InvalidNumber("Vehicle is already registered.");
         }
-        return Results.Json(new { vehicle.Id, vehicle.RegistrationNumber }, statusCode: StatusCodes.Status201Created);
+        return Results.Json(new { vehicle.Id, vehicle.RegistrationNumber, vehicle.IsElectric }, statusCode: StatusCodes.Status201Created);
     }
 
     private static IResult InvalidNumber(string message) => Results.ValidationProblem(
         new Dictionary<string, string[]> { ["registrationNumber"] = [message] });
 }
 
-public record VehicleRequest(string? RegistrationNumber);
+public record VehicleRequest(string? RegistrationNumber, bool? IsElectric = null);
