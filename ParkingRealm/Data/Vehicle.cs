@@ -7,4 +7,5 @@ public class Vehicle
     public ApplicationUser Owner { get; set; } = null!;
     public required string RegistrationNumber { get; set; }
     public required string NormalizedRegistrationNumber { get; set; }
+    public bool IsElectric { get; set; }
 }

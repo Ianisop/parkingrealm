@@ -243,6 +243,12 @@ namespace ParkingRealm.Data.Migrations
                     b.Property<int>("Column")
                         .HasColumnType("int");
 
+                    b.Property<bool>("HasCharger")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsAccessible")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Row")
                         .HasColumnType("int");
 
@@ -310,6 +316,9 @@ namespace ParkingRealm.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsElectric")
+                        .HasColumnType("bit");
 
                     b.Property<string>("NormalizedRegistrationNumber")
                         .IsRequired()

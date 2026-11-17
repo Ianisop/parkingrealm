@@ -37,7 +37,7 @@ public class ParkingEndpointTests(ApiFactory factory)
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var owner = new ApplicationUser { FirstName = "Test", LastName = "Customer" };
         var vehicle = new Vehicle { Owner = owner, OwnerId = owner.Id, RegistrationNumber = "TEST", NormalizedRegistrationNumber = "TEST" };
-        var space = new ParkingSpace { Row = 0, Column = 0 };
+        var space = new ParkingSpace { Row = 0, Column = 0, IsAccessible = true, HasCharger = true };
         var now = DateTimeOffset.UtcNow;
         var reservation = new Reservation
         {
@@ -53,6 +53,8 @@ public class ParkingEndpointTests(ApiFactory factory)
             var item = Assert.Single(current!);
             Assert.False(item.GetProperty("isAvailable").GetBoolean());
             Assert.Equal(0, item.GetProperty("row").GetInt32());
+            Assert.True(item.GetProperty("isAccessible").GetBoolean());
+            Assert.True(item.GetProperty("hasCharger").GetBoolean());
 
             var query = $"?start={Uri.EscapeDataString(now.ToString("O"))}&end={Uri.EscapeDataString(now.AddMinutes(30).ToString("O"))}";
             var overlap = await client.GetFromJsonAsync<JsonElement[]>("/api/parking-spaces" + query);

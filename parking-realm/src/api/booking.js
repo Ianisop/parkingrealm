@@ -15,7 +15,9 @@ export async function bookingRequest(path, options = {}) {
     return {
       ok: false,
       error: response.status === 409
-        ? 'Pladsen er ikke længere ledig. Vælg en anden plads.'
+        ? path === '/api/reservations'
+          ? 'Ingen ledig plads opfylder alle dine krav. Vælg et andet tidsrum eller en anden passende plads.'
+          : 'Pladsen er ikke længere ledig. Vælg en anden plads.'
         : response.status === 401
           ? 'Log ind igen for at fortsætte.'
           : 'Handlingen mislykkedes. Kontrollér oplysningerne og prøv igen.',
@@ -41,8 +43,8 @@ export const createReservation = (criteria) => bookingRequest('/api/reservations
   body: JSON.stringify(criteria),
 });
 export const cancelReservation = (id) => bookingRequest(`/api/reservations/${id}/cancel`, { method: 'POST' });
-export const registerVehicle = (registrationNumber) => bookingRequest('/api/vehicles', {
+export const registerVehicle = (registrationNumber, isElectric) => bookingRequest('/api/vehicles', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ registrationNumber }),
+  body: JSON.stringify({ registrationNumber, isElectric }),
 });

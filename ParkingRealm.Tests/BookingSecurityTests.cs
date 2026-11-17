@@ -13,16 +13,16 @@ public class BookingSecurityTests(ApiFactory factory)
         using var other = await BookingCustomer.LoginAsync(factory);
         client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
         Assert.Equal(HttpStatusCode.BadRequest,
-            (await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345" })).StatusCode);
+            (await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345", isElectric = false })).StatusCode);
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", "forged");
         Assert.Equal(HttpStatusCode.BadRequest,
-            (await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345" })).StatusCode);
+            (await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345", isElectric = false })).StatusCode);
         client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", other.DefaultRequestHeaders.GetValues("X-CSRF-TOKEN"));
         Assert.Equal(HttpStatusCode.BadRequest,
-            (await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345" })).StatusCode);
+            (await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345", isElectric = false })).StatusCode);
         Assert.Equal(HttpStatusCode.Created,
-            (await other.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345" })).StatusCode);
+            (await other.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "AB12345", isElectric = false })).StatusCode);
     }
 
     [Fact]

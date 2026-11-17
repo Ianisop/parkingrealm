@@ -84,7 +84,14 @@ if (app.Environment.IsDevelopment())
         {
             for (var column = 1; column <= 5; column++)
             {
-                db.ParkingSpaces.Add(new ParkingSpace { Row = row, Column = column });
+                var position = (row - 1) * 5 + column;
+                db.ParkingSpaces.Add(new ParkingSpace
+                {
+                    Row = row,
+                    Column = column,
+                    IsAccessible = position <= 2,
+                    HasCharger = position > 16
+                });
             }
         }
 

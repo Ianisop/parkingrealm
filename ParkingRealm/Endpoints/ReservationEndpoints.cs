@@ -45,6 +45,10 @@ public static class ReservationEndpoints
             errors["parkingSpaceId"] = ["Select a parking space."];
         if (request.Mode == "automatic" && request.ParkingSpaceId.HasValue)
             errors["parkingSpaceId"] = ["Automatic assignment does not accept a selected space."];
+        if (request.PreferredSpaceId.HasValue && request.PreferredSpaceId <= 0)
+            errors["preferredSpaceId"] = ["Select a valid preferred location."];
+        if (request.Mode == "manual" && request.PreferredSpaceId.HasValue)
+            errors["preferredSpaceId"] = ["Location preferences require automatic assignment."];
         if (errors.Count > 0)
             return Results.ValidationProblem(errors);
 
@@ -52,7 +56,8 @@ public static class ReservationEndpoints
         try
         {
             result = await service.CreateAsync(principal.FindFirstValue(ClaimTypes.NameIdentifier)!,
-                request.VehicleId, interval, request.ParkingSpaceId, ct);
+                request.VehicleId, interval, request.ParkingSpaceId, request.PreferredSpaceId,
+                new ParkingRequirements(request.RequiresAccessible, request.RequiresCharger), ct);
         }
         catch (ArgumentException ex) when (ex.ParamName == "interval")
         {
@@ -60,8 +65,12 @@ public static class ReservationEndpoints
         }
         if (result.Outcome == ReservationOutcome.VehicleNotFound)
             return Results.ValidationProblem(new Dictionary<string, string[]> { ["vehicleId"] = ["Vehicle is not available for this account."] });
+        if (result.Outcome == ReservationOutcome.ChargingNotSupported)
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["requiresCharger"] = ["Select an electric vehicle to request charging."] });
+        if (result.Outcome == ReservationOutcome.PreferenceNotFound)
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["preferredSpaceId"] = ["The preferred location no longer exists. Select another location."] });
         if (result.Outcome == ReservationOutcome.Unavailable)
-            return Results.Problem(title: "No suitable parking space is available.", statusCode: StatusCodes.Status409Conflict);
+            return Results.Problem(title: "No available parking space meets all selected requirements.", statusCode: StatusCodes.Status409Conflict);
 
         var r = result.Reservation!;
         return Results.Json(new ReservationResponse(r.Id, r.VehicleId, r.ParkingSpaceId, r.Start, r.End,
@@ -69,6 +78,7 @@ public static class ReservationEndpoints
     }
 }
 
-public record ReservationRequest(int VehicleId, string? Start, string? End, string? Mode, int? ParkingSpaceId);
+public record ReservationRequest(int VehicleId, string? Start, string? End, string? Mode, int? ParkingSpaceId,
+    int? PreferredSpaceId = null, bool RequiresAccessible = false, bool RequiresCharger = false);
 public record ReservationResponse(int Id, int VehicleId, int ParkingSpaceId, DateTimeOffset Start, DateTimeOffset End,
     string Status, DateTimeOffset CreatedAt, DateTimeOffset? CancelledAt);
