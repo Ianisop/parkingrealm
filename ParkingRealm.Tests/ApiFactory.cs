@@ -42,7 +42,7 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", connectionString);
         // Development auto-migrates at startup, which would throw before any request for an unreachable database.
-        if (connectionString != TestConnectionString)
+        if (connectionString == UnreachableConnectionString)
             builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>
         {

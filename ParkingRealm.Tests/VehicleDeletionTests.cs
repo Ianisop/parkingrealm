@@ -12,7 +12,7 @@ public class VehicleDeletionTests(ApiFactory factory)
 {
     private static async Task<int> RegisterAsync(HttpClient client, string plate)
     {
-        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = plate });
+        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = plate, isElectric = false });
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
     }

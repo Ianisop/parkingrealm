@@ -5,6 +5,7 @@ import { getCurrentUser, login } from './api/auth';
 
 jest.mock('./BookingPage', () => () => <div>Booking</div>);
 jest.mock('./VehiclesPage', () => () => <div>Vehicles</div>);
+jest.mock('./UsersPage', () => () => <div>Users</div>);
 
 jest.mock('./api/auth', () => ({
   ...jest.requireActual('./api/auth'),
@@ -35,6 +36,16 @@ test('restores an existing session and greets the user', async () => {
   expect(await screen.findByRole('heading', { name: 'Velkommen, Anna Hansen' })).toBeInTheDocument();
   expect(screen.queryByRole('heading', { name: 'Log ind' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Bookingstatistik' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Brugere' })).not.toBeInTheDocument();
+});
+
+test('only administrator sessions can navigate to user administration', async () => {
+  getCurrentUser.mockResolvedValue({ ...user, isAdministrator: true });
+  render(<App />);
+  userEvent.click(await screen.findByRole('button', { name: 'Brugere' }));
+  expect(screen.getByText('Users')).toBeInTheDocument();
+  userEvent.click(screen.getByRole('button', { name: 'Mine køretøjer' }));
+  expect(screen.queryByText('Users')).not.toBeInTheDocument();
 });
 
 test('only administrator sessions can navigate to booking statistics', async () => {

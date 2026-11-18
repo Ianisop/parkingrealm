@@ -144,6 +144,44 @@ public class LoginEndpointTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Deleted_account_cannot_log_in_and_gets_the_same_response_as_an_unknown_email()
+    {
+        var client = NewClient();
+        var email = await RegisterAsync(client);
+        await MarkDeletedAsync(email);
+
+        var deleted = await client.PostAsJsonAsync("/api/auth/login", new { email, password = Password });
+        var unknown = await client.PostAsJsonAsync("/api/auth/login", new { email = $"{Guid.NewGuid():N}@example.com", password = Password });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, deleted.StatusCode);
+        Assert.Equal(await BodyWithoutTraceIdAsync(unknown), await BodyWithoutTraceIdAsync(deleted));
+        Assert.False(deleted.Headers.Contains("Set-Cookie"));
+    }
+
+    [Fact]
+    public async Task Existing_session_of_a_deleted_user_is_no_longer_logged_in()
+    {
+        var client = NewClient();
+        var email = await RegisterAsync(client);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/login", new { email, password = Password })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
+
+        await MarkDeletedAsync(email);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/auth/me")).StatusCode);
+    }
+
+    private async Task MarkDeletedAsync(string email)
+    {
+        using var scope = factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = (await userManager.FindByEmailAsync(email))!;
+        user.DeletedAt = DateTimeOffset.UtcNow;
+        Assert.True((await userManager.UpdateAsync(user)).Succeeded);
+        Assert.True((await userManager.UpdateSecurityStampAsync(user)).Succeeded);
+    }
+
+    [Fact]
     public async Task Database_failure_returns_generic_500_with_no_cookie_and_no_leak()
     {
         await using var unreachable = new ApiFactory(ApiFactory.UnreachableConnectionString);

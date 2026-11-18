@@ -79,11 +79,13 @@ public class VehicleEndpointTests(ApiFactory factory)
         var response = await client.PostAsJsonAsync("/api/vehicles", request);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.True((await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("errors").TryGetProperty("isElectric", out _));
+    }
+
     [Fact]
     public async Task Unknown_plate_is_rejected_without_persisting()
     {
         using var client = await BookingCustomer.LoginAsync(factory);
-        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = FakeVehicleRegistry.UnknownPlate });
+        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = FakeVehicleRegistry.UnknownPlate, isElectric = false });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("registrationNumber", await response.Content.ReadAsStringAsync());
         Assert.Empty((await client.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
@@ -93,7 +95,7 @@ public class VehicleEndpointTests(ApiFactory factory)
     public async Task Unavailable_registry_is_reported_without_persisting()
     {
         using var client = await BookingCustomer.LoginAsync(factory);
-        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = FakeVehicleRegistry.UnavailablePlate });
+        var response = await client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = FakeVehicleRegistry.UnavailablePlate, isElectric = false });
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.Empty((await client.GetFromJsonAsync<JsonElement[]>("/api/vehicles"))!);
     }
@@ -103,7 +105,7 @@ public class VehicleEndpointTests(ApiFactory factory)
     {
         using var client = await BookingCustomer.LoginAsync(factory);
         var responses = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ =>
-            client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "EF12345" })));
+            client.PostAsJsonAsync("/api/vehicles", new { registrationNumber = "EF12345", isElectric = false })));
         Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Created);
         Assert.All(responses.Where(r => r.StatusCode != HttpStatusCode.Created),
             r => Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode));

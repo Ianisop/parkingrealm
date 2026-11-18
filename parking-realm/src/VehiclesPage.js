@@ -7,6 +7,7 @@ export default function VehiclesPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
+  const [electricChoice, setElectricChoice] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [confirmingId, setConfirmingId] = useState(null);
@@ -32,8 +33,12 @@ export default function VehiclesPage() {
       setError('Registreringsnummer mangler.');
       return;
     }
+    if (electricChoice === '') {
+      setError('Angiv, om køretøjet er elektrisk.');
+      return;
+    }
     setBusy(true);
-    const result = await registerVehicle(registrationNumber.trim());
+    const result = await registerVehicle(registrationNumber.trim(), electricChoice === 'true');
     setBusy(false);
     if (!result.ok) {
       setError(result.error);
@@ -42,6 +47,7 @@ export default function VehiclesPage() {
     setVehicles((current) => [...current, result.data]);
     setLoadError('');
     setRegistrationNumber('');
+    setElectricChoice('');
     setMessage(`Køretøj ${result.data.registrationNumber} er registreret.`);
   }
 
@@ -69,6 +75,12 @@ export default function VehiclesPage() {
         <label htmlFor="vehicleRegistrationNumber">Registreringsnummer</label>
         <input id="vehicleRegistrationNumber" value={registrationNumber} maxLength={32}
           onChange={(event) => setRegistrationNumber(event.target.value)} />
+        <label htmlFor="vehicleElectric">Er køretøjet elektrisk?</label>
+        <select id="vehicleElectric" value={electricChoice} onChange={(event) => setElectricChoice(event.target.value)}>
+          <option value="">Vælg køretøjstype</option>
+          <option value="true">Ja – elbil</option>
+          <option value="false">Nej – ikke elbil</option>
+        </select>
         <button type="submit" disabled={busy}>Registrer køretøj</button>
       </form>
       {error && <p role="alert">{error}</p>}

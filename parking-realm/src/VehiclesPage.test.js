@@ -34,9 +34,10 @@ test('registers a vehicle and confirms it', async () => {
   render(<VehiclesPage />);
   await screen.findByText('AB12345');
   userEvent.type(screen.getByLabelText('Registreringsnummer'), ' CD12345 ');
+  userEvent.selectOptions(screen.getByLabelText('Er køretøjet elektrisk?'), 'true');
   userEvent.click(screen.getByRole('button', { name: 'Registrer køretøj' }));
   expect(await screen.findByText('CD12345')).toBeInTheDocument();
-  expect(registerVehicle).toHaveBeenCalledWith('CD12345');
+  expect(registerVehicle).toHaveBeenCalledWith('CD12345', true);
   expect(screen.getByRole('status')).toHaveTextContent('Køretøj CD12345 er registreret.');
 });
 
@@ -45,6 +46,7 @@ test('a rejected registration shows the failure and adds nothing', async () => {
   render(<VehiclesPage />);
   await screen.findByText('AB12345');
   userEvent.type(screen.getByLabelText('Registreringsnummer'), 'ZZ99999');
+  userEvent.selectOptions(screen.getByLabelText('Er køretøjet elektrisk?'), 'false');
   userEvent.click(screen.getByRole('button', { name: 'Registrer køretøj' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('ukendt');
   expect(screen.queryByText('ZZ99999')).not.toBeInTheDocument();
@@ -55,6 +57,15 @@ test('a blank registration number is not submitted', async () => {
   await screen.findByText('AB12345');
   userEvent.click(screen.getByRole('button', { name: 'Registrer køretøj' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Registreringsnummer mangler.');
+  expect(registerVehicle).not.toHaveBeenCalled();
+});
+
+test('a missing electric classification is not submitted', async () => {
+  render(<VehiclesPage />);
+  await screen.findByText('AB12345');
+  userEvent.type(screen.getByLabelText('Registreringsnummer'), 'CD12345');
+  userEvent.click(screen.getByRole('button', { name: 'Registrer køretøj' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Angiv, om køretøjet er elektrisk.');
   expect(registerVehicle).not.toHaveBeenCalled();
 });
 
