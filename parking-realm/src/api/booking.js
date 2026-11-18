@@ -14,13 +14,22 @@ function errorMessage(path, method, status) {
       return 'Køretøjet kunne ikke registreres. Prøv igen senere.';
     }
   }
+  if (path.startsWith('/api/admin/users')) {
+    if (status === 403) return 'Administratorer kan ikke ændres eller slettes her.';
+    if (!method || method === 'GET') return 'Brugere kunne ikke hentes. Prøv igen senere.';
+    if (status === 404) return 'Brugeren findes ikke længere.';
+    if (method === 'DELETE') return 'Brugeren kunne ikke slettes. Prøv igen senere.';
+    if (status === 400) return 'Oplysningerne er ugyldige. Kontrollér felterne og prøv igen.';
+    if (method === 'PUT') return 'Brugeren kunne ikke opdateres. Prøv igen senere.';
+    return 'Brugeren kunne ikke oprettes. Prøv igen senere.';
+  }
   if (status === 409) return 'Pladsen er ikke længere ledig. Vælg en anden plads.';
   return 'Handlingen mislykkedes. Kontrollér oplysningerne og prøv igen.';
 }
 
 export async function bookingRequest(path, options = {}) {
   try {
-    if (options.method === 'POST' || options.method === 'DELETE') {
+    if (['POST', 'PUT', 'DELETE'].includes(options.method)) {
       const tokenResponse = await fetch(`${API_URL}/api/antiforgery`, { credentials: 'include' });
       if (!tokenResponse.ok) return { ok: false, error: 'Handlingen kunne ikke godkendes. Log ind igen.' };
       const { requestToken } = await tokenResponse.json();
@@ -61,3 +70,16 @@ export const registerVehicle = (registrationNumber, isElectric) => bookingReques
   body: JSON.stringify({ registrationNumber, isElectric }),
 });
 export const deleteVehicle = (id) => bookingRequest(`/api/vehicles/${id}`, { method: 'DELETE' });
+
+const jsonBody = (method, body) => ({
+  method,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+});
+export const getUsers = (search = '') => bookingRequest(
+  `/api/admin/users${search.trim() ? `?${new URLSearchParams({ search: search.trim() })}` : ''}`);
+export const createUser = (user) => bookingRequest('/api/admin/users', jsonBody('POST', user));
+export const updateUser = (id, user) => bookingRequest(
+  `/api/admin/users/${encodeURIComponent(id)}`, jsonBody('PUT', user));
+export const deleteUser = (id) => bookingRequest(
+  `/api/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' });

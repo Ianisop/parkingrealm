@@ -1,4 +1,6 @@
-import { createReservation, deleteVehicle, getSpaces, registerVehicle } from './booking';
+import {
+  createReservation, createUser, deleteUser, deleteVehicle, getSpaces, getUsers, registerVehicle, updateUser,
+} from './booking';
 
 beforeEach(() => { global.fetch = jest.fn(); });
 afterEach(() => { delete global.fetch; });
@@ -73,4 +75,60 @@ test.each([
   fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ requestToken: 'token' }) });
   fetch.mockResolvedValueOnce({ ok: false, status, json: async () => ({ errors: {} }) });
   expect((await registerVehicle('ZZ99999')).error).toBe(message);
+});
+
+const userPayload = { email: 'a@example.com', password: 'Passw0rd!', firstName: 'A', lastName: 'B', phoneNumber: '+4512345678' };
+
+test('lists users with credentials and an optional search, without an antiforgery token', async () => {
+  fetch.mockResolvedValue({ ok: true, json: async () => [] });
+  await getUsers(' anna ');
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/users?search=anna'),
+    expect.objectContaining({ credentials: 'include' }));
+  await getUsers();
+  expect(fetch).toHaveBeenLastCalledWith(expect.stringMatching(/\/api\/admin\/users$/), expect.anything());
+});
+
+test.each([
+  ['POST', () => createUser(userPayload), '/api/admin/users'],
+  ['PUT', () => updateUser('u 1', userPayload), '/api/admin/users/u%201'],
+  ['DELETE', () => deleteUser('u1'), '/api/admin/users/u1'],
+])('%s on users sends an antiforgery token', async (method, call, url) => {
+  fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ requestToken: 'token' }) });
+  fetch.mockResolvedValueOnce(method === 'DELETE' ? emptyResponse(204) : { ok: true, json: async () => ({}) });
+  expect((await call()).ok).toBe(true);
+  expect(fetch).toHaveBeenLastCalledWith(expect.stringContaining(url), expect.objectContaining({
+    method, credentials: 'include', headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'token' }),
+  }));
+});
+
+test('antiforgery failure prevents a user write', async () => {
+  fetch.mockResolvedValueOnce({ ok: false });
+  expect((await updateUser('u1', userPayload)).ok).toBe(false);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+test('user validation errors from the API are returned as field errors', async () => {
+  fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ requestToken: 'token' }) });
+  fetch.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ errors: { email: ['Email is already in use.'] } }) });
+  expect(await createUser(userPayload)).toEqual({
+    ok: false,
+    error: 'Oplysningerne er ugyldige. Kontrollér felterne og prøv igen.',
+    fieldErrors: { email: ['Email is already in use.'] },
+  });
+});
+
+test.each([
+  ['GET', 500, 'Brugere kunne ikke hentes. Prøv igen senere.', () => getUsers()],
+  ['POST', 500, 'Brugeren kunne ikke oprettes. Prøv igen senere.', () => createUser(userPayload)],
+  ['PUT', 404, 'Brugeren findes ikke længere.', () => updateUser('u1', userPayload)],
+  ['PUT', 403, 'Administratorer kan ikke ændres eller slettes her.', () => updateUser('u1', userPayload)],
+  ['PUT', 500, 'Brugeren kunne ikke opdateres. Prøv igen senere.', () => updateUser('u1', userPayload)],
+  ['DELETE', 404, 'Brugeren findes ikke længere.', () => deleteUser('u1')],
+  ['DELETE', 403, 'Administratorer kan ikke ændres eller slettes her.', () => deleteUser('u1')],
+  ['DELETE', 500, 'Brugeren kunne ikke slettes. Prøv igen senere.', () => deleteUser('u1')],
+])('%s on users with status %i gets its own message', async (method, status, message, call) => {
+  if (method !== 'GET') fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ requestToken: 'token' }) });
+  fetch.mockResolvedValueOnce({ ...emptyResponse(status), ok: false });
+  expect((await call()).error).toBe(message);
 });

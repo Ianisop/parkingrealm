@@ -33,15 +33,17 @@ test('booking registration succeeds for a known plate and fails visibly for an u
   await screen.findByRole('option', { name: 'AB12345' });
 
   userEvent.type(screen.getByLabelText('Registreringsnummer'), 'ZZ99999');
+  userEvent.selectOptions(screen.getByLabelText('Er køretøjet elektrisk?'), 'false');
   userEvent.click(screen.getByRole('button', { name: 'Registrer køretøj' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('ukendt');
   expect(screen.queryByRole('option', { name: 'ZZ99999' })).not.toBeInTheDocument();
 
   userEvent.clear(screen.getByLabelText('Registreringsnummer'));
   userEvent.type(screen.getByLabelText('Registreringsnummer'), 'EF12345');
+  userEvent.selectOptions(screen.getByLabelText('Er køretøjet elektrisk?'), 'false');
   userEvent.click(screen.getByRole('button', { name: 'Registrer køretøj' }));
   expect(await screen.findByRole('option', { name: 'EF12345' })).toBeInTheDocument();
-  expect(registerVehicle).toHaveBeenCalledWith('EF12345');
+  expect(registerVehicle).toHaveBeenCalledWith('EF12345', false);
 });
 
 test('a vehicle deleted in the overview is gone from the booking selection on return', async () => {
@@ -63,6 +65,7 @@ test('a vehicle registered in the overview is selectable in booking', async () =
   userEvent.click(await screen.findByRole('button', { name: 'Mine køretøjer' }));
   await screen.findByText('AB12345');
   userEvent.type(screen.getByLabelText('Registreringsnummer'), 'EF12345');
+  userEvent.selectOptions(screen.getByLabelText('Er køretøjet elektrisk?'), 'false');
   userEvent.click(screen.getByRole('button', { name: 'Registrer køretøj' }));
   await screen.findByRole('status');
 

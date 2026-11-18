@@ -5,6 +5,7 @@ import RegisterPage from './RegisterPage';
 import BookingPage from './BookingPage';
 import VehiclesPage from './VehiclesPage';
 import BookingStatisticsPage from './BookingStatisticsPage';
+import UsersPage from './UsersPage';
 import './RegisterPage.css';
 
 function App() {
@@ -44,8 +45,10 @@ function App() {
           <button type="button" onClick={() => setView('booking')}>Book parkering</button>
           <button type="button" onClick={() => setView('vehicles')}>Mine køretøjer</button>
           {user.isAdministrator && <button type="button" onClick={() => setView('statistics')}>Bookingstatistik</button>}
+          {user.isAdministrator && <button type="button" onClick={() => setView('users')}>Brugere</button>}
         </nav>
         {user.isAdministrator && view === 'statistics' ? <BookingStatisticsPage />
+          : user.isAdministrator && view === 'users' ? <UsersPage />
           : view === 'vehicles' ? <VehiclesPage /> : <BookingPage />}
       </main>
     );

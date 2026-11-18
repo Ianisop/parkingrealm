@@ -35,6 +35,10 @@ builder.Services
     .AddSignInManager()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+    // Check the stamp on every request so a deleted user's session ends immediately.
+    options.ValidationInterval = TimeSpan.Zero);
+
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
@@ -138,6 +142,7 @@ app.MapParkingEndpoints();
 app.MapReservationEndpoints();
 app.MapBookingSecurityEndpoints();
 app.MapBookingStatisticsEndpoints();
+app.MapUserAdministrationEndpoints();
 
 app.Run();
 
