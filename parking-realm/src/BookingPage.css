@@ -1,0 +1,96 @@
+.booking {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 56rem;
+  margin: 1rem auto;
+  padding: 0 1rem;
+}
+
+.booking input,
+.booking select,
+.booking button {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.booking button:focus-visible,
+.booking input:focus-visible,
+.booking select:focus-visible {
+  outline: 3px solid #185abc;
+  outline-offset: 2px;
+}
+
+.booking button:not(:disabled) {
+  cursor: pointer;
+}
+
+.booking input[aria-invalid='true'] {
+  border: 2px solid #b3261e;
+}
+
+.booking form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.booking-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.booking-shortcuts button[aria-pressed='true'] {
+  background: #185abc;
+  color: #fff;
+  border: 2px solid #185abc;
+}
+
+.booking-summary {
+  padding: 1rem;
+  border: 1px solid #185abc;
+  border-radius: 0.5rem;
+  background: #f3f7ff;
+  color: #172b4d;
+}
+
+.booking-summary h3 {
+  margin-top: 0;
+}
+
+.booking-requirements {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.booking-requirements label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.booking-requirements input {
+  flex-shrink: 0;
+  width: 1.25rem;
+}
+
+.parking-map {
+  display: grid;
+  gap: 0.5rem;
+  overflow: auto;
+}
+
+.parking-map button[aria-pressed='true'] {
+  outline: 3px solid #185abc;
+}
+
+.parking-map button[data-recommended='true'] {
+  border: 3px solid #185abc;
+}
+
+.parking-map button[data-eligible='false'] {
+  border-style: dashed;
+}
