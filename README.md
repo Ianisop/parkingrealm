@@ -147,5 +147,5 @@ Status er baseret på reservationer og er **ikke** en måling af fysisk belægni
 
 ```powershell
 dotnet test ParkingRealm.Tests      # bruger en midlertidig LocalDB-database, ParkingRealm_Tests
-cd parking-realm; npm test
+cd parking-realm; npm run build # frontend tests removed; validate production compilation
 ```

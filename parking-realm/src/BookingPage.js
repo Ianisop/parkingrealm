@@ -3,6 +3,7 @@ import { getSpaces, getVehicles, registerVehicle, getReservations, createReserva
 import { endForDuration, getBookingDefaults, toLocalInputValue, validateCriteria } from './bookingCriteria';
 import { matchesRequirements, recommendSpace } from './parkingRecommendation';
 import './BookingPage.css';
+import { PageHeader } from './ui';
 
 export { validateCriteria } from './bookingCriteria';
 
@@ -202,9 +203,12 @@ export default function BookingPage() {
 
   return (
     <section className="booking" aria-label="Booking">
-      <h2>Book parkeringsplads</h2>
-      <p>Book til i dag eller vælg en anden dato. Alle tidspunkter vises i din lokale tidszone.</p>
-      <form onSubmit={addVehicle}>
+      <PageHeader eyebrow="Gør plads til din dag" title="Book parkeringsplads" description="Book til i dag eller vælg en anden dato. Alle tidspunkter vises i din lokale tidszone." />
+      <div className="grid items-start gap-6 xl:grid-cols-2">
+      <section className="panel grid gap-4" aria-label="Køretøj og behov">
+      <h3><span className="badge mr-3">01</span>Køretøj og behov</h3>
+      <form className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4" onSubmit={addVehicle}>
+        <p className="font-semibold text-slate-700">Tilføj et køretøj</p>
         <label htmlFor="registrationNumber">Registreringsnummer</label>
         <input id="registrationNumber" value={registrationNumber} maxLength={32} disabled={vehicleBusy || busy || vehiclesLoading}
           onChange={(event) => setRegistrationNumber(event.target.value)} />
@@ -215,7 +219,7 @@ export default function BookingPage() {
           <option value="true">Ja – elbil</option>
           <option value="false">Nej – ikke elbil</option>
         </select>
-        <button type="submit" disabled={vehicleBusy || busy || vehiclesLoading}>
+        <button className="btn" type="submit" disabled={vehicleBusy || busy || vehiclesLoading}>
           {vehicleBusy ? 'Registrerer…' : 'Registrer køretøj'}
         </button>
       </form>
@@ -242,14 +246,17 @@ export default function BookingPage() {
       </fieldset>
       <p id="parkingRequirementsHelp">Handicappladser kræver det tilsvarende behov, og ladepladser kræver en elbil.
         Vælger du begge krav, skal samme plads opfylde begge. Elbiler kan også vælge en standardplads uden opladning.</p>
-      <button type="button" disabled={busy} onClick={bookToday}>Book i dag</button>
+      </section>
+      <section className="panel grid gap-4" aria-label="Tidspunkt">
+      <div className="flex flex-wrap items-center justify-between gap-3"><h3><span className="badge mr-3">02</span>Hvornår parkerer du?</h3>
+      <button className="btn" type="button" disabled={busy} onClick={bookToday}>Book i dag</button></div>
       <label htmlFor="bookingStart">Start</label>
       <input id="bookingStart" type="datetime-local" value={start} disabled={busy}
         min={toLocalInputValue(new Date(now + 60000))} aria-describedby="bookingTimeHelp"
         aria-invalid={Boolean(criteriaError)} onChange={(event) => changeStart(event.target.value)} />
       <fieldset className="booking-shortcuts" disabled={busy}>
         <legend>Varighed</legend>
-        {[1, 2, 4].map((hours) => <button key={hours} type="button" aria-pressed={durationHours === hours}
+        {[1, 2, 4].map((hours) => <button className="btn" key={hours} type="button" aria-pressed={durationHours === hours}
           onClick={() => chooseDuration(hours)}>{hours} {hours === 1 ? 'time' : 'timer'}</button>)}
       </fieldset>
       <label htmlFor="bookingEnd">Slut</label>
@@ -262,11 +269,15 @@ export default function BookingPage() {
         }} />
       <p id="bookingTimeHelp">Start skal være efter nu. Du kan også booke senere i dag. Sluttiden følger varigheden, når du ændrer start. Tæt på midnat vælges næste tidspunkt i morgen.</p>
       {criteriaError && <p role="alert">{criteriaError}</p>}
-      <fieldset disabled={busy}>
+      </section>
+      </div>
+      <section className="panel grid gap-5" aria-label="Vælg parkeringsplads">
+      <div className="flex flex-wrap items-center justify-between gap-3"><h3><span className="badge mr-3">03</span>Find din plads</h3><span className="badge">{mode === 'automatic' ? 'Automatisk anbefaling' : 'Vælg din favorit'}</span></div>
+      <fieldset className="flex flex-wrap gap-4 rounded-xl bg-slate-50 p-4" disabled={busy}>
         <legend>Tildeling</legend>
-        <label><input type="radio" name="mode" checked={mode === 'automatic'}
+        <label className="flex items-center gap-2"><input type="radio" name="mode" checked={mode === 'automatic'}
           onChange={() => { setMode('automatic'); setSelectedId(null); setOperationError(''); }} />Automatisk</label>
-        <label><input type="radio" name="mode" checked={mode === 'manual'}
+        <label className="flex items-center gap-2"><input type="radio" name="mode" checked={mode === 'manual'}
           onChange={() => { setMode('manual'); setOperationError(''); }} />Vælg selv</label>
       </fieldset>
       {mode === 'automatic' && <>
@@ -283,7 +294,7 @@ export default function BookingPage() {
           Afstanden beregnes som række- og kolonneforskel i oversigten, ikke faktisk gangafstand.</p>
         {preferenceError && <p role="alert">{preferenceError}</p>}
       </>}
-      <button type="button" disabled={busy} onClick={() => setRefresh((current) => current + 1)}>Opdater pladser</button>
+      <button className="btn justify-self-start" type="button" disabled={busy} onClick={() => setRefresh((current) => current + 1)}>Opdater pladser</button>
       <p>Ledighed er baseret på reservationer, ikke fysisk belægning.</p>
       {loading && <p role="status">Henter pladser…</p>}
       {mapError && <p role="alert">{mapError}</p>}
@@ -295,12 +306,19 @@ export default function BookingPage() {
         <p role="status">Ingen ledige pladser opfylder alle dine krav. Vælg et andet tidsrum. Der bookes ikke en plads uden de valgte faciliteter.</p>}
       {!requirements.requiresAccessible && spaces.some((space) => space.isAccessible && space.isAvailable) &&
         <p id="accessibleSpaceHint">Vil du booke en handicapplads? Sæt kryds i <a href="#requiresAccessible">Jeg har brug for en handicapplads</a> ovenfor.</p>}
-      <div className="parking-map" aria-label="Parkeringsoversigt">
+      <div className="flex flex-wrap gap-4 text-xs text-slate-600" aria-label="Pladsforklaring">
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded border border-emerald-400 bg-white" />Ledig</span>
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded bg-slate-300" />Reserveret</span>
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded bg-brand-600" />Valgt / anbefalet</span>
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded border border-dashed border-slate-400" />Matcher ikke dine krav</span>
+      </div>
+      <div className="parking-map" aria-label="Parkeringsoversigt" tabIndex={0}>
         {spaces.map((space) => <button key={space.id} type="button"
           style={{ gridRow: space.row + 1, gridColumn: space.column + 1 }}
           aria-pressed={selectedId === space.id}
           data-recommended={recommendation?.space.id === space.id}
           data-eligible={matchesRequirements(space, eligibility)}
+          data-available={space.isAvailable}
           aria-describedby={[
             recommendation?.space.id === space.id && 'parkingRecommendation',
             space.isAccessible && space.isAvailable && !requirements.requiresAccessible && 'accessibleSpaceHint',
@@ -312,6 +330,8 @@ export default function BookingPage() {
         </button>)}
       </div>
       {selectedId && <p>Valgt plads: {selectedId}</p>}
+      </section>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
       {!criteriaError && <section className="booking-summary" aria-label="Bookingoversigt">
         <h3>Din booking</h3>
         <p>Køretøj: {selectedVehicle?.registrationNumber || 'Vælg eller registrer et køretøj'}</p>
@@ -328,22 +348,27 @@ export default function BookingPage() {
           {' '}Ved samme afstand vælges laveste pladsnummer. Pladsen kontrolleres igen ved booking og kan ændre sig.
         </p>}
       </section>}
-      <button type="button" disabled={!canBook} onClick={book}>{busy ? 'Behandler…' : 'Bekræft booking'}</button>
+      <div className="grid gap-3"><button className="btn btn-primary min-h-14 text-base" type="button" disabled={!canBook} onClick={book}>{busy ? 'Behandler…' : 'Bekræft booking'}</button><p className="text-center text-xs">Pladsen kontrolleres igen, når du bekræfter.</p></div>
+      </div>
       {operationError && <p role="alert">{operationError}</p>}
       {confirmation && <p role="status">{confirmation}</p>}
+      <section className="panel grid gap-5" aria-label="Dine reservationer">
       <h2>Mine reservationer</h2>
       {reservationsLoading && <p>Henter reservationer…</p>}
       {reservationsError && <p role="alert">{reservationsError}</p>}
       {!reservationsLoading && !reservationsError && reservations.length === 0 && <p>Ingen reservationer.</p>}
-      <ul>
-        {reservations.map((reservation) => <li key={reservation.id}>
+      <ul className="grid gap-3">
+        {reservations.map((reservation) => <li className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 p-4 text-sm leading-7 text-slate-600" key={reservation.id}>
+          <div>
           Reservation {reservation.id}, plads {reservation.parkingSpaceId}: {reservation.status === 'Active' ? 'Aktiv' : 'Annulleret'}.
           {' '}{new Date(reservation.start).toLocaleString('da-DK')} – {new Date(reservation.end).toLocaleString('da-DK')}
-          {reservation.status === 'Active' && <button type="button" disabled={busy || vehicleBusy} onClick={() => cancel(reservation.id)}>
+          </div>
+          {reservation.status === 'Active' && <button className="btn btn-danger" type="button" disabled={busy || vehicleBusy} onClick={() => cancel(reservation.id)}>
             Annuller reservation {reservation.id}
           </button>}
         </li>)}
       </ul>
+      </section>
     </section>
   );
 }

@@ -1,5 +1,13 @@
 # Parking inventory provisioning
 
+## Development schema recovery
+
+Development uses the migration-managed LocalDB database `ParkingRealm_Development_Migrations`. The older local database named `ParkingRealm` can contain an incompatible schema with `Vehicles.UserId`, `Reservations.StartsAt`/`EndsAt`, and `ParkingSpaces.Label`/`Floor`. It is not interchangeable with this application's model.
+
+If startup reports SQL error 2714 (`AspNetRoles` already exists), verify the effective connection string, including environment-variable and user-secret overrides, and compare `__EFMigrationsHistory` with the actual schema. Use the existing compatible development database; normal Development startup applies genuinely pending migrations. Changing a connection does not transfer accounts or bookings between databases.
+
+Never drop a populated database, suppress migration errors, or insert migration-history rows just because tables exist. Back up legacy data and use a separately reviewed data migration if it must be transferred. Preserve extra tables and migration-history entries from other feature branches; switching branches is not a reason to run destructive rollback migrations.
+
 Run `ParkingSpaces.sql` using a trusted database operator connection after applying EF migrations. This is not a public API, and it must not be callable by ordinary application customers.
 
 Supply the SQL parameter `@Inventory` as a JSON array containing the real garage's zero-based row/column coordinates. For interactive SQL Server Management Studio use, prepend a `DECLARE @Inventory nvarchar(max) = N'...';` statement containing your validated JSON. For example, `[{"row":0,"column":0},{"row":0,"column":1}]` describes two example positions only; replace it with the actual garage layout.

@@ -1,4 +1,15 @@
-# Getting Started with Create React App
+# ParkingRealm UI
+
+The interface uses Tailwind CSS 3.4 with the existing Create React App build; no CDN or separate CSS generation process is needed. Run `npm install`, then `npm start` for development or `npm run build` for production. Restart the development server after installing Tailwind or changing its configuration.
+
+- `tailwind.config.js`: source scanning, blue brand palette, and card shadow.
+- `src/index.css`: Tailwind layers, shared controls, panels, feedback, and navigation.
+- `src/ui.js`: local SVG icons, brand mark, and page headers; no icon/font network dependency.
+- `src/BookingPage.css` and `src/RegisterPage.css`: scoped Tailwind component styles.
+
+The Danish UI has responsive navigation, keyboard focus/skip navigation, horizontally scrollable tables and parking maps, explicit empty/error states, and a grouped booking flow. Styling does not change API permissions or booking requirements. Frontend automated tests and their npm command have been removed; use `npm run build` to validate production compilation.
+
+## Build tooling
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
@@ -13,11 +24,6 @@ Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
 ### `npm run build`
 

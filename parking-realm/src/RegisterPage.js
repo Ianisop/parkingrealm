@@ -61,7 +61,9 @@ export default function RegisterPage() {
 
   return (
     <main className="register">
+      <p className="eyebrow mb-3">Velkommen til ParkingRealm</p>
       <h1>Opret bruger</h1>
+      <p className="page-description">Opret din profil, og saml din parkering ét sted.</p>
 
       {success && (
         <p role="status" className="register-success">
@@ -95,7 +97,7 @@ export default function RegisterPage() {
             )}
           </div>
         ))}
-        <button type="submit" disabled={submitting}>
+        <button className="btn btn-primary mt-2 w-full" type="submit" disabled={submitting}>
           {submitting ? 'Opretter…' : 'Opret bruger'}
         </button>
       </form>

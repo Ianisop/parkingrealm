@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createUser, deleteUser, getUsers, updateUser } from './api/booking';
 import { NAME_MAX_LENGTH, validateRegistration } from './registerValidation';
 import './BookingPage.css';
+import { PageHeader } from './ui';
 
 const EMPTY = { email: '', password: '', firstName: '', lastName: '', phoneNumber: '' };
 // The password is not part of editing; this value only satisfies the shared validation.
@@ -100,36 +101,38 @@ export default function UsersPage() {
   }
 
   const field = (key, label, type = 'text') => (
-    <>
+    <div className="field">
       <label htmlFor={`user-${key}`}>{label}</label>
       <input id={`user-${key}`} type={type} value={form.values[key]} onChange={setField(key)}
         maxLength={key === 'firstName' || key === 'lastName' ? NAME_MAX_LENGTH : undefined}
         autoComplete={type === 'password' ? 'new-password' : 'off'} />
       {errors[key] && <p role="alert">{errors[key]}</p>}
-    </>
+    </div>
   );
 
   return (
     <section className="booking" aria-label="Brugeradministration">
-      <h2>Brugere</h2>
-      <form onSubmit={runSearch} role="search">
+      <PageHeader eyebrow="Administration" title="Brugere" description="Administrér profiler og kontaktoplysninger. Søg, opret eller opdatér brugere her.">
+        <button className="btn btn-primary" type="button" onClick={() => openForm(null)}>Opret bruger</button>
+      </PageHeader>
+      <form className="panel grid items-end gap-3 sm:grid-cols-[1fr_auto]" onSubmit={runSearch} role="search">
+        <div className="field">
         <label htmlFor="userSearch">Søg efter navn eller email</label>
         <input id="userSearch" value={search} onChange={(event) => setSearch(event.target.value)} />
-        <button type="submit">Søg</button>
+        </div><button className="btn" type="submit">Søg</button>
       </form>
-      <button type="button" onClick={() => openForm(null)}>Opret bruger</button>
 
       {form && (
-        <form onSubmit={submit} aria-label={form.id ? 'Rediger bruger' : 'Opret bruger'}>
-          <h3>{form.id ? 'Rediger bruger' : 'Opret bruger'}</h3>
+        <form className="panel grid gap-5 sm:grid-cols-2" onSubmit={submit} aria-label={form.id ? 'Rediger bruger' : 'Opret bruger'}>
+          <h3 className="sm:col-span-2">{form.id ? 'Rediger bruger' : 'Opret bruger'}</h3>
           {field('email', 'Email', 'email')}
           {!form.id && field('password', 'Adgangskode', 'password')}
           {field('firstName', 'Fornavn')}
           {field('lastName', 'Efternavn')}
           {field('phoneNumber', 'Telefonnummer', 'tel')}
           {errors.registration && <p role="alert">{errors.registration}</p>}
-          <button type="submit" disabled={busy}>{form.id ? 'Gem ændringer' : 'Opret'}</button>
-          <button type="button" onClick={() => setForm(null)}>Annuller</button>
+          <div className="flex gap-3 sm:col-span-2"><button className="btn btn-primary" type="submit" disabled={busy}>{form.id ? 'Gem ændringer' : 'Opret'}</button>
+          <button className="btn" type="button" onClick={() => setForm(null)}>Annuller</button></div>
         </form>
       )}
 
@@ -137,9 +140,9 @@ export default function UsersPage() {
       {message && <p role="status">{message}</p>}
       {loading && <p>Henter brugere…</p>}
       {loadError && <p role="alert">{loadError}</p>}
-      {!loading && !loadError && users.length === 0 && <p>Ingen brugere fundet.</p>}
+      {!loading && !loadError && users.length === 0 && <p className="panel py-12 text-center">Ingen brugere fundet.</p>}
       {users.length > 0 && (
-        <table>
+        <div className="panel"><div className="table-scroll" tabIndex={0} role="region" aria-label="Brugeroversigt"><table>
           <caption>Brugere</caption>
           <thead>
             <tr><th>Navn</th><th>Email</th><th>Telefon</th><th>Rolle</th><th>Handlinger</th></tr>
@@ -147,22 +150,22 @@ export default function UsersPage() {
           <tbody>
             {users.map((user) => (
               <tr key={user.id}>
-                <td>{user.firstName} {user.lastName}</td>
+                <td className="font-semibold text-slate-900">{user.firstName} {user.lastName}</td>
                 <td>{user.email}</td>
                 <td>{user.phoneNumber}</td>
-                <td>{user.isAdministrator ? 'Administrator' : 'Bruger'}</td>
+                <td><span className="badge">{user.isAdministrator ? 'Administrator' : 'Bruger'}</span></td>
                 <td>
                   {user.isAdministrator ? 'Kan ikke ændres her' : confirmingId === user.id ? (
                     <>
-                      <button type="button" disabled={busy} onClick={() => remove(user)}>
+                      <button className="btn btn-danger" type="button" disabled={busy} onClick={() => remove(user)}>
                         Bekræft sletning af {user.email}
                       </button>
-                      <button type="button" onClick={() => setConfirmingId(null)}>Annuller</button>
+                      <button className="btn m-1" type="button" onClick={() => setConfirmingId(null)}>Annuller</button>
                     </>
                   ) : (
                     <>
-                      <button type="button" disabled={busy} onClick={() => openForm(user)}>Rediger {user.email}</button>
-                      <button type="button" disabled={busy} onClick={() => { setConfirmingId(user.id); setMessage(''); setError(''); }}>
+                      <button className="btn m-1" type="button" disabled={busy} onClick={() => openForm(user)}>Rediger {user.email}</button>
+                      <button className="btn btn-danger m-1" type="button" disabled={busy} onClick={() => { setConfirmingId(user.id); setMessage(''); setError(''); }}>
                         Slet {user.email}
                       </button>
                     </>
@@ -171,7 +174,7 @@ export default function UsersPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div></div>
       )}
     </section>
   );

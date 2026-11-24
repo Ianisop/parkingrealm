@@ -46,7 +46,9 @@ export default function LoginPage({ onLoggedIn }) {
 
   return (
     <main className="register">
+      <p className="eyebrow mb-3">Godt at se dig igen</p>
       <h1>Log ind</h1>
+      <p className="page-description">Din næste parkering starter her. Log ind for at fortsætte.</p>
 
       {generalError && (
         <p role="alert" className="register-error">
@@ -75,7 +77,7 @@ export default function LoginPage({ onLoggedIn }) {
             )}
           </div>
         ))}
-        <button type="submit" disabled={submitting}>
+        <button className="btn btn-primary mt-2 w-full" type="submit" disabled={submitting}>
           {submitting ? 'Logger ind…' : 'Log ind'}
         </button>
       </form>

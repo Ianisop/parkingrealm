@@ -1,42 +1,7 @@
-.register {
-  max-width: 28rem;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  font-family: system-ui, sans-serif;
-}
-
-.register-field {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1rem;
-}
-
-.register-field label {
-  margin-bottom: 0.25rem;
-  font-weight: 600;
-}
-
-.register-field input {
-  padding: 0.5rem;
-  font-size: 1rem;
-}
-
-.register-field input[aria-invalid='true'] {
-  border-color: #b00020;
-}
-
-.register-error {
-  margin: 0.25rem 0 0;
-  color: #b00020;
-}
-
-.register-success {
-  padding: 0.75rem;
-  color: #0b5e20;
-  background: #e6f4ea;
-}
-
-.register button {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
-}
+.register { @apply mx-auto w-full max-w-md; }
+.register h1 { @apply mb-2 text-3xl font-bold tracking-tight; }
+.register form { @apply mt-8 grid gap-5; }
+.register-field { @apply grid gap-2; }
+.register-error { @apply text-sm leading-6 text-rose-700; }
+.register > .register-error { @apply mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4; }
+.register-success { @apply mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800; }
