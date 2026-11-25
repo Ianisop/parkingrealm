@@ -15,6 +15,9 @@ function errorMessage(path, method, status) {
     }
   }
   if (path.startsWith('/api/admin/users')) {
+    if (path.endsWith('/password-reset')) {
+      return status === 404 ? 'Brugeren findes ikke længere.' : 'Nulstillingslinket kunne ikke sendes. Prøv igen senere.';
+    }
     if (status === 403) return 'Administratorer kan ikke ændres eller slettes her.';
     if (!method || method === 'GET') return 'Brugere kunne ikke hentes. Prøv igen senere.';
     if (status === 404) return 'Brugeren findes ikke længere.';
@@ -83,3 +86,5 @@ export const updateUser = (id, user) => bookingRequest(
   `/api/admin/users/${encodeURIComponent(id)}`, jsonBody('PUT', user));
 export const deleteUser = (id) => bookingRequest(
   `/api/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
+export const sendPasswordReset = (id) => bookingRequest(
+  `/api/admin/users/${encodeURIComponent(id)}/password-reset`, { method: 'POST' });

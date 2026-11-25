@@ -81,6 +81,48 @@ export async function login({ email, password }) {
   return { ok: false, fieldErrors: {}, generalError: LOGIN_GENERAL_ERROR };
 }
 
+export const RESET_GENERAL_ERROR = 'Handlingen mislykkedes. Prøv igen senere.';
+export const RESET_LINK_INVALID = 'Nulstillingslinket er ugyldigt eller udløbet. Anmod om et nyt link.';
+
+// The API answers the same whether or not the email belongs to an account.
+export async function forgotPassword(email) {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (response.ok) return { ok: true };
+    if (response.status === 400) return { ok: false, fieldErrors: { email: 'Email er ikke en gyldig emailadresse.' } };
+  } catch {
+    // fall through to the general error below
+  }
+  return { ok: false, fieldErrors: {}, generalError: RESET_GENERAL_ERROR };
+}
+
+export async function resetPassword({ email, token, newPassword }) {
+  let response;
+  try {
+    response = await fetch(`${API_URL}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, token, newPassword }),
+    });
+  } catch {
+    return { ok: false, fieldErrors: {}, generalError: RESET_GENERAL_ERROR };
+  }
+
+  if (response.ok) return { ok: true };
+
+  if (response.status === 400) {
+    const body = await response.json().catch(() => null);
+    if (body?.errors?.password) return { ok: false, fieldErrors: { password: translateServerError('password', '') } };
+    return { ok: false, fieldErrors: {}, generalError: RESET_LINK_INVALID };
+  }
+
+  return { ok: false, fieldErrors: {}, generalError: RESET_GENERAL_ERROR };
+}
+
 // Returns the logged-in user, or null when not logged in or the API cannot be reached.
 export async function getCurrentUser() {
   try {

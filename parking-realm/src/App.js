@@ -6,13 +6,32 @@ import BookingPage from './BookingPage';
 import VehiclesPage from './VehiclesPage';
 import BookingStatisticsPage from './BookingStatisticsPage';
 import UsersPage from './UsersPage';
+import ForgotPasswordPage from './ForgotPasswordPage';
+import ResetPasswordPage from './ResetPasswordPage';
 import { Brand, Icon } from './ui';
 import './RegisterPage.css';
+
+// A reset link opens the app with ?resetToken=...&email=...
+function readResetParams() {
+  const query = new URLSearchParams(window.location.search);
+  const token = query.get('resetToken');
+  const email = query.get('email');
+  return token && email ? { token, email } : null;
+}
 
 function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [view, setView] = useState('login');
+  const [resetParams, setResetParams] = useState(readResetParams);
+  const [notice, setNotice] = useState('');
+
+  function leaveResetPage(message = '') {
+    window.history.replaceState(null, '', window.location.pathname);
+    setResetParams(null);
+    setView('login');
+    setNotice(message);
+  }
 
   // Restore the login state from the session cookie, e.g. after a page reload.
   useEffect(() => {
@@ -87,10 +106,20 @@ function App() {
       </aside>
       <div className="flex min-h-screen flex-col justify-center px-6 py-10 sm:px-12">
         <div className="mx-auto mb-12 w-full max-w-md lg:hidden"><Brand /></div>
-        {view === 'login' ? <LoginPage onLoggedIn={setUser} /> : <RegisterPage />}
+        {resetParams ? (
+          <ResetPasswordPage
+            email={resetParams.email}
+            token={resetParams.token}
+            onDone={() => leaveResetPage('Din adgangskode er nulstillet. Log ind med din nye adgangskode.')}
+            onBack={() => leaveResetPage()}
+          />
+        ) : view === 'forgot' ? <ForgotPasswordPage onBack={() => setView('login')} />
+          : view === 'login' ? <LoginPage onLoggedIn={setUser} notice={notice} onForgotPassword={() => { setNotice(''); setView('forgot'); }} />
+          : <RegisterPage />}
+      {!resetParams && view !== 'forgot' && (
       <nav aria-label="Konto" className="mx-auto mt-8 w-full max-w-md border-t border-slate-200 pt-6 text-center">
         {view === 'login' ? (
-          <button className="text-sm font-semibold text-brand-700 hover:text-brand-900" type="button" onClick={() => setView('register')}>
+          <button className="text-sm font-semibold text-brand-700 hover:text-brand-900" type="button" onClick={() => { setNotice(''); setView('register'); }}>
             Ny bruger? Opret bruger
           </button>
         ) : (
@@ -99,6 +128,7 @@ function App() {
           </button>
         )}
       </nav>
+      )}
       </div>
     </div>
   );
