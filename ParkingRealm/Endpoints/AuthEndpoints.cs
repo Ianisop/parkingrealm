@@ -12,6 +12,14 @@ public static class AuthEndpoints
         app.MapPost("/api/auth/register", RegisterAsync);
         app.MapPost("/api/auth/login", LoginAsync);
         app.MapGet("/api/auth/me", GetCurrentUserAsync).RequireAuthorization();
+        // Deliberately anonymous so a logout with an already expired session still succeeds.
+        app.MapPost("/api/auth/logout", LogoutAsync);
+    }
+
+    private static async Task<IResult> LogoutAsync(SignInManager<ApplicationUser> signInManager)
+    {
+        await signInManager.SignOutAsync();
+        return Results.NoContent();
     }
 
     private static async Task<IResult> LoginAsync(

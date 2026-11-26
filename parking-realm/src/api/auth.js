@@ -3,6 +3,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5198';
 export const GENERAL_ERROR = 'Oprettelsen mislykkedes. Prøv igen senere.';
 export const LOGIN_INVALID = 'Email eller adgangskode er forkert.';
 export const LOGIN_GENERAL_ERROR = 'Login mislykkedes. Prøv igen senere.';
+export const LOGOUT_ERROR = 'Log ud mislykkedes. Prøv igen senere.';
 
 // The API answers with English messages; the UI shows Danish ones.
 function translateServerError(field, message) {
@@ -88,5 +89,15 @@ export async function getCurrentUser() {
     return response.ok ? await response.json() : null;
   } catch {
     return null;
+  }
+}
+
+// Ends the session. Network errors and non-2xx responses count as failure.
+export async function logout() {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+    return { ok: response.ok };
+  } catch {
+    return { ok: false };
   }
 }
