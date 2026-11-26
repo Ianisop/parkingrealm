@@ -5,6 +5,20 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+$/;
 // E.164: '+' followed by country code and number, at most 15 digits.
 const PHONE_REGEX = /^\+[1-9]\d{1,14}$/;
 
+export function passwordError(password) {
+  if (!password) return 'Adgangskode mangler.';
+  if (
+    password.length < PASSWORD_MIN_LENGTH ||
+    !/\d/.test(password) ||
+    !/[a-z]/.test(password) ||
+    !/[A-Z]/.test(password) ||
+    !/[^a-zA-Z0-9]/.test(password)
+  ) {
+    return `Adgangskoden skal være mindst ${PASSWORD_MIN_LENGTH} tegn og indeholde et tal, et stort bogstav, et lille bogstav og et specialtegn.`;
+  }
+  return '';
+}
+
 export function validateRegistration(values) {
   const errors = {};
   const email = values.email.trim();
@@ -12,17 +26,8 @@ export function validateRegistration(values) {
   if (!email) errors.email = 'Email mangler.';
   else if (!EMAIL_REGEX.test(email)) errors.email = 'Email er ikke en gyldig emailadresse.';
 
-  if (!values.password) {
-    errors.password = 'Adgangskode mangler.';
-  } else if (
-    values.password.length < PASSWORD_MIN_LENGTH ||
-    !/\d/.test(values.password) ||
-    !/[a-z]/.test(values.password) ||
-    !/[A-Z]/.test(values.password) ||
-    !/[^a-zA-Z0-9]/.test(values.password)
-  ) {
-    errors.password = `Adgangskoden skal være mindst ${PASSWORD_MIN_LENGTH} tegn og indeholde et tal, et stort bogstav, et lille bogstav og et specialtegn.`;
-  }
+  const passwordMessage = passwordError(values.password);
+  if (passwordMessage) errors.password = passwordMessage;
 
   validateName(errors, 'firstName', 'Fornavn', values.firstName);
   validateName(errors, 'lastName', 'Efternavn', values.lastName);

@@ -33,7 +33,14 @@ builder.Services
     })
     .AddRoles<IdentityRole>()
     .AddSignInManager()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
+// Password reset links are valid for 30 minutes unless configured otherwise.
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+    options.TokenLifespan = TimeSpan.FromMinutes(builder.Configuration.GetValue("PasswordReset:TokenLifespanMinutes", 30.0)));
+builder.Services.AddSingleton<IPasswordResetSender, LoggingPasswordResetSender>();
+builder.Services.AddScoped<PasswordResetService>();
 
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
     // Check the stamp on every request so a deleted user's session ends immediately.
@@ -137,6 +144,7 @@ app.UseAuthorization();
 
 app.MapGet("/", () => "Hello World!");
 app.MapAuthEndpoints();
+app.MapPasswordResetEndpoints();
 app.MapVehicleEndpoints();
 app.MapParkingEndpoints();
 app.MapReservationEndpoints();

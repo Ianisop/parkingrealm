@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { createUser, deleteUser, getUsers, updateUser } from './api/booking';
+import { createUser, deleteUser, getUsers, sendPasswordReset, updateUser } from './api/booking';
 import { NAME_MAX_LENGTH, validateRegistration } from './registerValidation';
 import './BookingPage.css';
 import { PageHeader } from './ui';
@@ -95,6 +95,18 @@ export default function UsersPage() {
     load(search);
   }
 
+  async function sendReset(user) {
+    if (busy) return;
+    setError('');
+    setMessage('');
+    setConfirmingId(null);
+    setBusy(true);
+    const result = await sendPasswordReset(user.id);
+    setBusy(false);
+    if (result.ok) setMessage(`Et nulstillingslink er sendt til ${user.email}.`);
+    else setError(result.error);
+  }
+
   function runSearch(event) {
     event.preventDefault();
     load(search);
@@ -169,6 +181,11 @@ export default function UsersPage() {
                         Slet {user.email}
                       </button>
                     </>
+                  )}
+                  {confirmingId !== user.id && (
+                    <button className="btn m-1" type="button" disabled={busy} onClick={() => sendReset(user)}>
+                      Send nulstillingslink til {user.email}
+                    </button>
                   )}
                 </td>
               </tr>

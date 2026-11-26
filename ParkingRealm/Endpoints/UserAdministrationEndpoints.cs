@@ -22,6 +22,19 @@ public static class UserAdministrationEndpoints
         users.MapPost("", CreateAsync).AddEndpointFilter<BookingAntiforgeryFilter>();
         users.MapPut("/{id}", UpdateAsync).AddEndpointFilter<BookingAntiforgeryFilter>();
         users.MapDelete("/{id}", DeleteAsync).AddEndpointFilter<BookingAntiforgeryFilter>();
+        users.MapPost("/{id}/password-reset", SendPasswordResetAsync).AddEndpointFilter<BookingAntiforgeryFilter>();
+    }
+
+    // Only issues the link; the administrator never sees or sets a password or token. Administrator accounts are allowed.
+    private static async Task<IResult> SendPasswordResetAsync(
+        string id, UserManager<ApplicationUser> userManager, PasswordResetService resetService, CancellationToken ct)
+    {
+        var user = await FindActiveAsync(userManager, id);
+        if (user is null)
+            return Results.NotFound();
+
+        await resetService.IssueAsync(user, ct);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> ListAsync(string? search, ApplicationDbContext db, CancellationToken ct)

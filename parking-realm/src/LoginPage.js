@@ -9,7 +9,7 @@ const FIELDS = [
 
 const EMPTY = { email: '', password: '' };
 
-export default function LoginPage({ onLoggedIn }) {
+export default function LoginPage({ onLoggedIn, notice, onForgotPassword }) {
   const [values, setValues] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [generalError, setGeneralError] = useState('');
@@ -50,6 +50,11 @@ export default function LoginPage({ onLoggedIn }) {
       <h1>Log ind</h1>
       <p className="page-description">Din næste parkering starter her. Log ind for at fortsætte.</p>
 
+      {notice && (
+        <p role="status" className="register-success">
+          {notice}
+        </p>
+      )}
       {generalError && (
         <p role="alert" className="register-error">
           {generalError}
@@ -79,6 +84,9 @@ export default function LoginPage({ onLoggedIn }) {
         ))}
         <button className="btn btn-primary mt-2 w-full" type="submit" disabled={submitting}>
           {submitting ? 'Logger ind…' : 'Log ind'}
+        </button>
+        <button className="mt-4 w-full text-center text-sm font-semibold text-brand-700 hover:text-brand-900" type="button" onClick={onForgotPassword}>
+          Glemt adgangskode?
         </button>
       </form>
     </main>

@@ -432,4 +432,74 @@ public class UserAdministrationTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.DoesNotContain("SqlException", await response.Content.ReadAsStringAsync());
     }
+
+    // Password reset link ------------------------------------------------------------------------
+
+    private static Task<HttpResponseMessage> SendResetAsync(HttpClient client, string? id) =>
+        client.PostAsync($"/api/admin/users/{id}/password-reset", null);
+
+    [Fact]
+    public async Task Reset_link_is_issued_for_ordinary_and_administrator_accounts_without_exposing_secrets()
+    {
+        using var admin = await LoginAdminAsync(factory);
+        var ordinaryEmail = NewEmail();
+        var ordinaryId = (await CreateAsync(admin, ordinaryEmail)).GetProperty("id").GetString();
+        var me = await admin.GetFromJsonAsync<JsonElement>("/api/auth/me");
+        var adminEmail = me.GetProperty("email").GetString()!;
+
+        var forOrdinary = await SendResetAsync(admin, ordinaryId);
+        var forAdmin = await SendResetAsync(admin, me.GetProperty("id").GetString());
+
+        Assert.Equal(HttpStatusCode.NoContent, forOrdinary.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, forAdmin.StatusCode);
+        Assert.Empty(await forOrdinary.Content.ReadAsStringAsync());
+        Assert.NotEmpty(factory.ResetSender.LinksFor(ordinaryEmail));
+        Assert.NotEmpty(factory.ResetSender.LinksFor(adminEmail));
+    }
+
+    [Fact]
+    public async Task Reset_link_keeps_the_old_password_until_the_user_completes_the_reset()
+    {
+        using var admin = await LoginAdminAsync(factory);
+        var email = NewEmail();
+        var id = (await CreateAsync(admin, email)).GetProperty("id").GetString();
+
+        Assert.Equal(HttpStatusCode.NoContent, (await SendResetAsync(admin, id)).StatusCode);
+
+        Assert.True(await CanLoginAsync(factory, email, Password));
+        var (linkEmail, token) = factory.ResetSender.LastLinkFor(email);
+        using var anonymous = factory.CreateClient();
+        var reset = await anonymous.PostAsJsonAsync("/api/auth/reset-password", new { email = linkEmail, token, newPassword = "N3w-Passw0rd!" });
+        Assert.Equal(HttpStatusCode.NoContent, reset.StatusCode);
+        Assert.True(await CanLoginAsync(factory, email, "N3w-Passw0rd!"));
+    }
+
+    [Fact]
+    public async Task Reset_link_for_unknown_or_deleted_user_is_not_found_and_issues_no_link()
+    {
+        using var admin = await LoginAdminAsync(factory);
+        var email = NewEmail();
+        var id = (await CreateAsync(admin, email)).GetProperty("id").GetString();
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.DeleteAsync($"/api/admin/users/{id}")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.NotFound, (await SendResetAsync(admin, id)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await SendResetAsync(admin, Guid.NewGuid().ToString("N"))).StatusCode);
+        Assert.Empty(factory.ResetSender.LinksFor(email));
+    }
+
+    [Fact]
+    public async Task Reset_link_is_refused_for_anonymous_ordinary_and_missing_verification_token()
+    {
+        using var ordinary = await BookingCustomer.LoginAsync(factory);
+        using var anonymous = factory.CreateClient();
+        using var admin = await LoginAdminAsync(factory);
+        var email = NewEmail();
+        var id = (await CreateAsync(admin, email)).GetProperty("id").GetString();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await SendResetAsync(anonymous, id)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await SendResetAsync(ordinary, id)).StatusCode);
+        admin.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+        Assert.Equal(HttpStatusCode.BadRequest, (await SendResetAsync(admin, id)).StatusCode);
+        Assert.Empty(factory.ResetSender.LinksFor(email));
+    }
 }
