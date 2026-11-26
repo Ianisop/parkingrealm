@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getCurrentUser } from './api/auth';
+import { getCurrentUser, logout, LOGOUT_ERROR } from './api/auth';
 import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 import BookingPage from './BookingPage';
@@ -25,6 +25,8 @@ function App() {
   const [view, setView] = useState('login');
   const [resetParams, setResetParams] = useState(readResetParams);
   const [notice, setNotice] = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
 
   function leaveResetPage(message = '') {
     window.history.replaceState(null, '', window.location.pathname);
@@ -33,6 +35,18 @@ function App() {
     setNotice(message);
   }
 
+  async function handleLogout() {
+    setLoggingOut(true);
+    setLogoutError('');
+    const result = await logout();
+    setLoggingOut(false);
+    if (result.ok) {
+      setUser(null);
+      setView('login');
+    } else {
+      setLogoutError(LOGOUT_ERROR);
+    }
+  }
   // Restore the login state from the session cookie, e.g. after a page reload.
   useEffect(() => {
     let active = true;
@@ -80,8 +94,9 @@ function App() {
           <h1 className="text-sm font-medium text-slate-600">
           Velkommen, {user.firstName} {user.lastName}
           </h1>
-          <div className="flex items-center gap-3"><span className="badge">{user.isAdministrator ? 'Administrator' : 'Min konto'}</span><span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">{user.firstName?.[0]}{user.lastName?.[0]}</span></div>
+          <div className="flex items-center gap-3"><span className="badge">{user.isAdministrator ? 'Administrator' : 'Min konto'}</span><button type="button" className="btn" onClick={handleLogout} disabled={loggingOut}>Log ud</button><span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">{user.firstName?.[0]}{user.lastName?.[0]}</span></div>
           </header>
+          {logoutError && <p role="alert" className="mx-5 mt-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 sm:mx-8">{logoutError}</p>}
           <main id="main-content" tabIndex={-1} className="mx-auto max-w-7xl p-4 sm:p-8 lg:p-10">
         {user.isAdministrator && view === 'statistics' ? <BookingStatisticsPage />
           : user.isAdministrator && view === 'users' ? <UsersPage />
